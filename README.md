@@ -1,4 +1,3 @@
-# HGSM-HattrickGameServerManager
-HGSM-HattrickGameServerManager
-
-A kind of HL1/ HL2 game manager that does not alter the game that much
+# HGSM
+## Hattrick Game Server Manager ##
+A Kind Of `HL1`/ `HL2` Game Server Manager That Does Not Alter The Game That Much
