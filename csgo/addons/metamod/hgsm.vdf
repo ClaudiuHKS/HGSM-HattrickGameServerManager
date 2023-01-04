@@ -1,0 +1,5 @@
+"Metamod Plugin"
+{
+    "file"      "addons/hgsm/bin/hgsm_mm"
+    "alias"     "hgsm"
+}

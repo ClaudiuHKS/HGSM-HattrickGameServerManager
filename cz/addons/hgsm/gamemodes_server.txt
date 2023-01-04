@@ -1,0 +1,21 @@
+"GameModes_Server.txt"
+{
+    "gameTypes"
+    {
+        "classic"
+        {
+            "gameModes"
+            {
+                "competitive"
+                {
+                    "maxplayers"    "512"
+
+                    "exec"
+                    {
+                        "exec"      "server.cfg"
+                    }
+                }
+            }
+        }
+    }
+}

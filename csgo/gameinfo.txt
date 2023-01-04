@@ -1,0 +1,32 @@
+"GameInfo"
+{
+    game "Counter-Strike: Global Offensive"
+    title "COUNTER-STRIKE'"
+    title2 "GO"
+    type multiplayer_only
+    nomodels 1
+    nohimodel 1
+    nocrosshair 0
+    bots 1
+    hidden_maps
+    {
+        "test_speakers" 1
+        "test_hardware" 1
+    }
+    nodegraph 0
+    SupportsXbox360 1
+    SupportsDX8 0
+    GameData "csgo.fgd"
+    FileSystem
+    {
+        SteamAppId 730
+        ToolsAppId 211
+        SearchPaths
+        {
+            GameBin csgo/addons/metamod/bin
+            // GameBin csgo/addons/metamod/bin/linux64
+            Game |gameinfo_path|.
+            Game csgo
+        }
+    }
+}
