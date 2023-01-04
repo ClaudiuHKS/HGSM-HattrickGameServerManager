@@ -1,0 +1,2 @@
+# HGSM-HattrickGameServerManager
+HGSM-HattrickGameServerManager
