@@ -14,10 +14,14 @@ HGSM (Hattrick Game Server Manager) For HL1 Games
 
         readme.txt                          Details                                                                                             (TXT Type)
 
-    Optional Files Here (/%GameFolder%/addons/hgsm/*)
+    Optional Files Here (/%GameFolder%/addons/hgsm/*) [Can Also Be Moved To /%GameFolder%/addons/hgsm/disabled/*]
 
-        delete_bot_profile_files            If It Ever Exists Here The Files Like "/%GameFolder%/botchatter.db" (*.db) Will Always Be Erased - Useful If Your Game Server Is Not Using Playing Bots
-        delete_motd_file                    If It Ever Exists Here The "/%GameFolder%/motd.txt" And The "/%GameFolder%/motd_text.txt" Files Will Always Be Removed
+        delete_bot_profile_files            If It Ever Exists Here The Files Like "/%GameFolder%/botchatter.db" (*.db) Will Always Be Erased
+                                            Useful If Your Game Server Is Not Using Playing Bots
+
+        delete_motd_file                    If It Ever Exists Here The "/%GameFolder%/motd.txt", The "/%GameFolder%/motd_default.txt", The "/%GameFolder%/motd_text.txt",
+                                            The "/%GameFolder%/cfg/motd.txt", The "/%GameFolder%/cfg/motd_default.txt" And The "/%GameFolder%/cfg/motd_text.txt"
+                                            Files Will Always Be Removed
 
         autoexec.cfg                        If It Ever Exists Here It Will Be Copied Where It Belongs - Sometimes The Steam Cmd Update Overrides Some Of Your Files
         config.cfg                          If It Ever Exists Here It Will Be Copied Where It Belongs - Sometimes The Steam Cmd Update Overrides Some Of Your Files
