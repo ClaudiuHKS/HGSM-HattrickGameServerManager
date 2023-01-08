@@ -68,6 +68,8 @@ extern ::META_FUNCTIONS* gpMetaFunctionTable;
 
 extern ::cvar_t g_cvVersion;
 
+extern ::std::unordered_map < ::std::string, ::std::string > g_mapKeyValues[16384];
+
 extern ::std::string g_strGameDir;
 
 extern ::std::string g_strWelcome_1;
@@ -185,17 +187,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept;
 void Hook_KeyValue(::edict_t*, ::KeyValueData*) noexcept;
 void Hook_ClientDisconnect(::edict_t*) noexcept;
 
-
-#ifdef WIN32
-
-constexpr void Hook_ServerDeactivate_Post() noexcept;
-
-#else
-
 void Hook_ServerDeactivate_Post() noexcept;
-
-#endif
-
 void Hook_ServerActivate_Post(::edict_t*, int, int) noexcept;
 void Hook_StartFrame_Post() noexcept;
 void Hook_ClientPutInServer_Post(::edict_t*) noexcept;

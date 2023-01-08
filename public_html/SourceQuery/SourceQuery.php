@@ -1,8 +1,6 @@
-<?
-    namespace xPaw\SourceQuery;
-    use xPaw\SourceQuery\Exception\AuthenticationException;
-    use xPaw\SourceQuery\Exception\InvalidPacketException;
-    use xPaw\SourceQuery\Exception\SocketException;
+<? namespace xPaw\SourceQuery;
+    use xPaw\SourceQuery\Exception\authExcp;
+    use xPaw\SourceQuery\Exception\sckExcp;
     class SourceQuery {
         const GOLDSOURCE = 0;
         const SOURCE = 1;
@@ -63,7 +61,7 @@
         {
             if( !$this->Connected )
             {
-                throw new SocketException( 'Not connected.', SocketException::NOT_CONNECTED );
+                throw new sckExcp( 'Not connected.', sckExcp::NOT_CONNECTED );
             }
             $this->Socket->Write( self::A2A_PING );
             $Buffer = $this->Socket->Read( );
@@ -73,7 +71,7 @@
         {
             if( !$this->Connected )
             {
-                throw new SocketException( 'Not connected.', SocketException::NOT_CONNECTED );
+                throw new sckExcp( 'Not connected.', sckExcp::NOT_CONNECTED );
             }
             if( $this->Challenge )
             {
@@ -184,10 +182,7 @@
                 {
                     $Server[ 'GameID' ] = $Buffer->GetUnsignedLong( ) | ( $Buffer->GetUnsignedLong( ) << 32 );
                 }
-                if( $Buffer->Remaining( ) > 0 )
-                {
-                    throw new InvalidPacketException( 'Still have to read ' . $Buffer->Remaining( ) . ' bytes.', InvalidPacketException::BUFFER_NOT_EMPTY );
-                }
+                if( $Buffer->Remaining( ) > 0 ) { }
             }
             return $Server;
         }
@@ -195,7 +190,7 @@
         {
             if( !$this->Connected )
             {
-                throw new SocketException( 'Not connected.', SocketException::NOT_CONNECTED );
+                throw new sckExcp( 'Not connected.', sckExcp::NOT_CONNECTED );
             }
             $this->GetChallenge( self::A2S_PLAYER, self::S2A_PLAYER );
             $this->Socket->Write( self::A2S_PLAYER, $this->Challenge );
@@ -219,7 +214,7 @@
         {
             if( !$this->Connected )
             {
-                throw new SocketException( 'Not connected.', SocketException::NOT_CONNECTED );
+                throw new sckExcp( 'Not connected.', sckExcp::NOT_CONNECTED );
             }
             $this->GetChallenge( self::A2S_RULES, self::S2A_RULES );
             $this->Socket->Write( self::A2S_RULES, $this->Challenge );
@@ -262,17 +257,14 @@
                 {
                     return;
                 }
-                case 0:
-                {
-                    throw new InvalidPacketException( 'Failed to get challenge.' );
-                }
+                case 0: { }
             }
         }
         public function SetRconPassword( string $Password ) : void
         {
             if( !$this->Connected )
             {
-                throw new SocketException( 'Not connected.', SocketException::NOT_CONNECTED );
+                throw new sckExcp( 'Not connected.', sckExcp::NOT_CONNECTED );
             }
             switch( $this->Socket->Engine )
             {
@@ -288,7 +280,7 @@
                 }
                 default:
                 {
-                    throw new SocketException( 'Unknown engine.', SocketException::INVALID_ENGINE );
+                    throw new sckExcp( 'Unknown engine.', sckExcp::INVALID_ENGINE );
                 }
             }
             $this->Rcon->Open( );
@@ -298,7 +290,7 @@
         {
             if( !$this->Connected )
             {
-                throw new SocketException( 'Not connected.', SocketException::NOT_CONNECTED );
+                throw new sckExcp( 'Not connected.', sckExcp::NOT_CONNECTED );
             }
             return $this->Rcon->Command( $Command );
         }

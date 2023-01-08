@@ -1,7 +1,3 @@
-<? namespace xPaw\SourceQuery\Exception;
-    class SocketException extends SourceQueryException {
-        const COULD_NOT_CREATE_SOCKET = 1;
-        const NOT_CONNECTED = 2;
-        const CONNECTION_FAILED = 3;
-        const INVALID_ENGINE = 4;
-    }
+<? namespace xPaw\SourceQuery\Exception; class sckExcp extends SourceQueryException {
+const NOT_CONNECTED = 1; const CONNECTION_FAILED = 2; const INVALID_ENGINE = 3;
+}

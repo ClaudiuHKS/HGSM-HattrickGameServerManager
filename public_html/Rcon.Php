@@ -396,7 +396,7 @@
                                 (Int)$Plr,
                                 ((Int)$Inf['MaxPlayers']),
                                 $Itr,
-                                (Isset($_POST['cmd']) && Isset($_POST['srv']) && ((Int)$_POST['srv']) == $Itr) ? Trim($_POST['cmd']) : "");
+                                (Isset($_POST['cmd']) && Isset($_POST['srv']) && ((Int)$_POST['srv']) == $Itr) ? @Htmlentities(Trim($_POST['cmd'])) : "");
             }
 
             Else
@@ -475,7 +475,7 @@
 
     If (Isset($_POST['srv']) && Isset($_POST['cmd']))
     {
-        $Res = "FAILED";
+        $Res = "Failed.";
         {
             $Exc = Null;
         }
@@ -514,13 +514,29 @@
 
             Else
             {
-                Echo "FAILED";
+                Echo "<textarea spellcheck=false>";
+                {
+                    Echo Trim($_POST['cmd']);
+                }
+                Echo "</textarea>";
             }
         }
 
         Else
         {
-            Echo "FAILED";
+            Echo "<textarea spellcheck=false>";
+            {
+                If (@Mb_Strlen(Trim($Exc->getMessage())) > 0)
+                {
+                    Echo Trim($Exc->getMessage());
+                }
+
+                Else
+                {
+                    Echo "Failed.";
+                }
+            }
+            Echo "</textarea>";
         }
     }
 

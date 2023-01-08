@@ -38,6 +38,8 @@
 
 ::cvar_t g_cvVersion{ "hgsm_version", __DATE__, FCVAR_SERVER | FCVAR_SPONLY, { }, };
 
+::std::unordered_map < ::std::string, ::std::string > g_mapKeyValues[16384]{ };
+
 ::std::string g_strGameDir{ };
 
 ::std::string g_strWelcome_1{ };
@@ -1015,7 +1017,8 @@ int Hook_Spawn(::edict_t* pEntity) noexcept
     static ::nlohmann::json jsTreeStripper{ }, jsTreeKvAdder{ };
     static ::KeyValueData kvData{ };
 
-    static bool bErrorStripper{ }, bErrorKvAdder{ };
+    static int nIter{ }, nEntity{ };
+    static bool bErrorStripper{ }, bErrorKvAdder{ }, bKeep{ };
     static char szClassName[256]{ }, szKeyName[256]{ }, szValue[256]{ };
 
     if (!::g_bStripper)
@@ -1189,59 +1192,162 @@ int Hook_Spawn(::edict_t* pEntity) noexcept
         if (pEntity)
         {
             strClass.assign(STRING(pEntity->v.classname));
-
-            if (!strClass.empty())
             {
-                for (auto& jsItem : jsTreeStripper)
+                if (!strClass.empty())
                 {
-                    if (!jsItem.empty())
+                    bKeep = { };
                     {
-                        if (jsItem.is_object())
+                        for (auto& jsItem : jsTreeStripper)
                         {
-                            if (!jsItem["map"].empty())
+                            if (!jsItem.empty())
                             {
-                                if (jsItem["map"].is_string())
+                                if (jsItem.is_object())
                                 {
-                                    if (!strMap.compare(jsItem["map"].get < ::std::string >()) || (jsItem["map"].get < ::std::string >()).empty())
+                                    if (!jsItem["map"].empty())
                                     {
-                                        if (!jsItem["classname"].empty())
+                                        if (jsItem["map"].is_string())
                                         {
-                                            if (jsItem["classname"].is_string())
+                                            if (!strMap.compare(jsItem["map"].get < ::std::string >()) || (jsItem["map"].get < ::std::string >()).empty())
                                             {
-                                                if (!strClass.compare(jsItem["classname"].get < ::std::string >()))
+                                                if (!jsItem["classname"].empty())
                                                 {
-                                                    if (!jsItem["origin_x"].empty())
+                                                    if (jsItem["classname"].is_string())
                                                     {
-                                                        if (jsItem["origin_x"].is_number())
+                                                        if (!strClass.compare(jsItem["classname"].get < ::std::string >()))
                                                         {
-                                                            if (pEntity->v.origin.x == jsItem["origin_x"].get < float >() || jsItem["origin_x"].get < float >() == 2147483647.f)
+                                                            if (!jsItem["origin_x"].empty())
                                                             {
-                                                                if (!jsItem["origin_y"].empty())
+                                                                if (jsItem["origin_x"].is_number())
                                                                 {
-                                                                    if (jsItem["origin_y"].is_number())
+                                                                    if (pEntity->v.origin.x == jsItem["origin_x"].get < float >() || jsItem["origin_x"].get < float >() == 2147483647.f)
                                                                     {
-                                                                        if (pEntity->v.origin.y == jsItem["origin_y"].get < float >() || jsItem["origin_y"].get < float >() == 2147483647.f)
+                                                                        if (!jsItem["origin_y"].empty())
                                                                         {
-                                                                            if (!jsItem["origin_z"].empty())
+                                                                            if (jsItem["origin_y"].is_number())
                                                                             {
-                                                                                if (jsItem["origin_z"].is_number())
+                                                                                if (pEntity->v.origin.y == jsItem["origin_y"].get < float >() || jsItem["origin_y"].get < float >() == 2147483647.f)
                                                                                 {
-                                                                                    if (pEntity->v.origin.z == jsItem["origin_z"].get < float >() || jsItem["origin_z"].get < float >() == 2147483647.f)
+                                                                                    if (!jsItem["origin_z"].empty())
                                                                                     {
-                                                                                        ::std::printf("REMOVED '%s' [%f %f %f]\n", strClass.c_str(), pEntity->v.origin.x, pEntity->v.origin.y, pEntity->v.origin.z);
+                                                                                        if (jsItem["origin_z"].is_number())
                                                                                         {
-                                                                                            (*::g_engfuncs.pfnRemoveEntity) (pEntity);
-                                                                                        }
-
-                                                                                        {
-                                                                                            do
+                                                                                            if (pEntity->v.origin.z == jsItem["origin_z"].get < float >() || jsItem["origin_z"].get < float >() == 2147483647.f)
                                                                                             {
-                                                                                                ::gpMetaGlobals->mres = ::MRES_SUPERCEDE;
+                                                                                                if ((nEntity = ::ENTINDEX(pEntity)) > 0)
+                                                                                                {
+                                                                                                    for (nIter = { }; nIter < 10; nIter++)
+                                                                                                    {
+                                                                                                        ::std::snprintf(szKeyName, sizeof szKeyName, "ifn_key_%d", nIter);
+                                                                                                        {
+                                                                                                            if (!jsItem[szKeyName].empty())
+                                                                                                            {
+                                                                                                                if (jsItem[szKeyName].is_string())
+                                                                                                                {
+                                                                                                                    if (!((jsItem[szKeyName].get < ::std::string >()).empty()))
+                                                                                                                    {
+                                                                                                                        ::std::snprintf(szValue, sizeof szValue, "ifn_value_%d", nIter);
+                                                                                                                        {
+                                                                                                                            if (!jsItem[szValue].empty())
+                                                                                                                            {
+                                                                                                                                if (jsItem[szValue].is_string())
+                                                                                                                                {
+                                                                                                                                    if ((jsItem[szValue].get < ::std::string >()).empty())
+                                                                                                                                    {
+                                                                                                                                        if (::g_mapKeyValues[nEntity][(jsItem[szKeyName].get < ::std::string >())].empty())
+                                                                                                                                        {
+                                                                                                                                            bKeep = true;
+                                                                                                                                        }
+                                                                                                                                    }
 
-                                                                                                return xTo(true, int);
+                                                                                                                                    else
+                                                                                                                                    {
+                                                                                                                                        if (!((jsItem[szValue].get < ::std::string >()).compare(::g_mapKeyValues[nEntity][(jsItem[szKeyName].get < ::std::string >())])))
+                                                                                                                                        {
+                                                                                                                                            bKeep = true;
+                                                                                                                                        }
+                                                                                                                                    }
+                                                                                                                                }
+                                                                                                                            }
+                                                                                                                        }
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            }
+                                                                                                        }
+                                                                                                    }
+
+                                                                                                    for (nIter = { }; nIter < 10; nIter++)
+                                                                                                    {
+                                                                                                        ::std::snprintf(szKeyName, sizeof szKeyName, "if_key_%d", nIter);
+                                                                                                        {
+                                                                                                            if (!jsItem[szKeyName].empty())
+                                                                                                            {
+                                                                                                                if (jsItem[szKeyName].is_string())
+                                                                                                                {
+                                                                                                                    if (!((jsItem[szKeyName].get < ::std::string >()).empty()))
+                                                                                                                    {
+                                                                                                                        ::std::snprintf(szValue, sizeof szValue, "if_value_%d", nIter);
+                                                                                                                        {
+                                                                                                                            if (!jsItem[szValue].empty())
+                                                                                                                            {
+                                                                                                                                if (jsItem[szValue].is_string())
+                                                                                                                                {
+                                                                                                                                    if ((jsItem[szValue].get < ::std::string >()).empty())
+                                                                                                                                    {
+                                                                                                                                        if (::g_mapKeyValues[nEntity][(jsItem[szKeyName].get < ::std::string >())].empty())
+                                                                                                                                        {
+                                                                                                                                            bKeep = { };
+                                                                                                                                        }
+                                                                                                                                    }
+
+                                                                                                                                    else
+                                                                                                                                    {
+                                                                                                                                        if (!((jsItem[szValue].get < ::std::string >()).compare(::g_mapKeyValues[nEntity][(jsItem[szKeyName].get < ::std::string >())])))
+                                                                                                                                        {
+                                                                                                                                            bKeep = { };
+                                                                                                                                        }
+                                                                                                                                    }
+                                                                                                                                }
+                                                                                                                            }
+                                                                                                                        }
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            }
+                                                                                                        }
+                                                                                                    }
+                                                                                                }
+
+                                                                                                if (!bKeep)
+                                                                                                {
+                                                                                                    ::std::printf("REMOVED '%s' [%f %f %f]\n", strClass.c_str(), pEntity->v.origin.x, pEntity->v.origin.y, pEntity->v.origin.z);
+                                                                                                    {
+                                                                                                        (*::g_engfuncs.pfnRemoveEntity) (pEntity);
+                                                                                                    }
+
+                                                                                                    {
+                                                                                                        do
+                                                                                                        {
+                                                                                                            ::gpMetaGlobals->mres = ::MRES_SUPERCEDE;
+
+                                                                                                            return xTo(true, int);
+                                                                                                        }
+
+                                                                                                        while (false);
+                                                                                                    }
+                                                                                                }
+
+                                                                                                else
+                                                                                                {
+                                                                                                    if (nEntity > 0)
+                                                                                                    {
+                                                                                                        ::std::printf("PRESERVED '%s' (%d) [%f %f %f]\n", strClass.c_str(), nEntity, pEntity->v.origin.x, pEntity->v.origin.y, pEntity->v.origin.z);
+                                                                                                    }
+
+                                                                                                    else
+                                                                                                    {
+                                                                                                        ::std::printf("PRESERVED '%s' [%f %f %f]\n", strClass.c_str(), pEntity->v.origin.x, pEntity->v.origin.y, pEntity->v.origin.z);
+                                                                                                    }
+                                                                                                }
                                                                                             }
-
-                                                                                            while (false);
                                                                                         }
                                                                                     }
                                                                                 }
@@ -1270,75 +1376,76 @@ int Hook_Spawn(::edict_t* pEntity) noexcept
         if (pEntity)
         {
             strClass.assign(STRING(pEntity->v.classname));
-
-            if (!strClass.empty())
             {
-                for (auto& jsItem : jsTreeKvAdder)
+                if (!strClass.empty())
                 {
-                    if (!jsItem.empty())
+                    for (auto& jsItem : jsTreeKvAdder)
                     {
-                        if (jsItem.is_object())
+                        if (!jsItem.empty())
                         {
-                            if (!jsItem["map"].empty())
+                            if (jsItem.is_object())
                             {
-                                if (jsItem["map"].is_string())
+                                if (!jsItem["map"].empty())
                                 {
-                                    if (!strMap.compare(jsItem["map"].get < ::std::string >()) || (jsItem["map"].get < ::std::string >()).empty())
+                                    if (jsItem["map"].is_string())
                                     {
-                                        if (!jsItem["classname"].empty())
+                                        if (!strMap.compare(jsItem["map"].get < ::std::string >()) || (jsItem["map"].get < ::std::string >()).empty())
                                         {
-                                            if (jsItem["classname"].is_string())
+                                            if (!jsItem["classname"].empty())
                                             {
-                                                if (!strClass.compare(jsItem["classname"].get < ::std::string >()))
+                                                if (jsItem["classname"].is_string())
                                                 {
-                                                    if (!jsItem["origin_x"].empty())
+                                                    if (!strClass.compare(jsItem["classname"].get < ::std::string >()))
                                                     {
-                                                        if (jsItem["origin_x"].is_number())
+                                                        if (!jsItem["origin_x"].empty())
                                                         {
-                                                            if (pEntity->v.origin.x == jsItem["origin_x"].get < float >() || jsItem["origin_x"].get < float >() == 2147483647.f)
+                                                            if (jsItem["origin_x"].is_number())
                                                             {
-                                                                if (!jsItem["origin_y"].empty())
+                                                                if (pEntity->v.origin.x == jsItem["origin_x"].get < float >() || jsItem["origin_x"].get < float >() == 2147483647.f)
                                                                 {
-                                                                    if (jsItem["origin_y"].is_number())
+                                                                    if (!jsItem["origin_y"].empty())
                                                                     {
-                                                                        if (pEntity->v.origin.y == jsItem["origin_y"].get < float >() || jsItem["origin_y"].get < float >() == 2147483647.f)
+                                                                        if (jsItem["origin_y"].is_number())
                                                                         {
-                                                                            if (!jsItem["origin_z"].empty())
+                                                                            if (pEntity->v.origin.y == jsItem["origin_y"].get < float >() || jsItem["origin_y"].get < float >() == 2147483647.f)
                                                                             {
-                                                                                if (jsItem["origin_z"].is_number())
+                                                                                if (!jsItem["origin_z"].empty())
                                                                                 {
-                                                                                    if (pEntity->v.origin.z == jsItem["origin_z"].get < float >() || jsItem["origin_z"].get < float >() == 2147483647.f)
+                                                                                    if (jsItem["origin_z"].is_number())
                                                                                     {
-                                                                                        if (!jsItem["kv_classname"].empty())
+                                                                                        if (pEntity->v.origin.z == jsItem["origin_z"].get < float >() || jsItem["origin_z"].get < float >() == 2147483647.f)
                                                                                         {
-                                                                                            if (jsItem["kv_classname"].is_string())
+                                                                                            if (!jsItem["kv_classname"].empty())
                                                                                             {
-                                                                                                if (!jsItem["key"].empty())
+                                                                                                if (jsItem["kv_classname"].is_string())
                                                                                                 {
-                                                                                                    if (jsItem["key"].is_string())
+                                                                                                    if (!jsItem["key"].empty())
                                                                                                     {
-                                                                                                        if (!jsItem["value"].empty())
+                                                                                                        if (jsItem["key"].is_string())
                                                                                                         {
-                                                                                                            if (jsItem["value"].is_string())
+                                                                                                            if (!jsItem["value"].empty())
                                                                                                             {
-                                                                                                                ::std::printf("IN '%s' [%f %f %f] ADDED '%s: %s = %s'\n", strClass.c_str(), pEntity->v.origin.x, pEntity->v.origin.y, pEntity->v.origin.z, (jsItem["kv_classname"].get < ::std::string >()).c_str(), (jsItem["key"].get < ::std::string >()).c_str(), (jsItem["value"].get < ::std::string >()).c_str());
+                                                                                                                if (jsItem["value"].is_string())
                                                                                                                 {
-                                                                                                                    ::std::snprintf(szClassName, sizeof szClassName, (jsItem["kv_classname"].get < ::std::string >()).c_str());
-                                                                                                                    ::std::snprintf(szKeyName, sizeof szKeyName, (jsItem["key"].get < ::std::string >()).c_str());
-                                                                                                                    ::std::snprintf(szValue, sizeof szValue, (jsItem["value"].get < ::std::string >()).c_str());
+                                                                                                                    ::std::printf("IN '%s' [%f %f %f] ADDED '%s: %s = %s'\n", strClass.c_str(), pEntity->v.origin.x, pEntity->v.origin.y, pEntity->v.origin.z, (jsItem["kv_classname"].get < ::std::string >()).c_str(), (jsItem["key"].get < ::std::string >()).c_str(), (jsItem["value"].get < ::std::string >()).c_str());
                                                                                                                     {
-                                                                                                                        kvData.szClassName = szClassName;
-                                                                                                                        kvData.szKeyName = szKeyName;
-                                                                                                                        kvData.szValue = szValue;
+                                                                                                                        ::std::snprintf(szClassName, sizeof szClassName, (jsItem["kv_classname"].get < ::std::string >()).c_str());
+                                                                                                                        ::std::snprintf(szKeyName, sizeof szKeyName, (jsItem["key"].get < ::std::string >()).c_str());
+                                                                                                                        ::std::snprintf(szValue, sizeof szValue, (jsItem["value"].get < ::std::string >()).c_str());
                                                                                                                         {
-                                                                                                                            kvData.fHandled = { };
+                                                                                                                            kvData.szClassName = szClassName;
+                                                                                                                            kvData.szKeyName = szKeyName;
+                                                                                                                            kvData.szValue = szValue;
+                                                                                                                            {
+                                                                                                                                kvData.fHandled = { };
+                                                                                                                            }
                                                                                                                         }
                                                                                                                     }
-                                                                                                                }
-                                                                                                                {
-                                                                                                                    ::gpGamedllFuncs->dllapi_table->pfnKeyValue(pEntity, &kvData);
                                                                                                                     {
-                                                                                                                        ::std::printf("* THE CALL WAS '%s'\n", kvData.fHandled ? "HANDLED" : "UNHANDLED");
+                                                                                                                        ::gpGamedllFuncs->dllapi_table->pfnKeyValue(pEntity, &kvData);
+                                                                                                                        {
+                                                                                                                            ::std::printf("* THE CALL WAS '%s'\n", kvData.fHandled ? "HANDLED" : "UNHANDLED");
+                                                                                                                        }
                                                                                                                     }
                                                                                                                 }
                                                                                                             }
@@ -3220,6 +3327,7 @@ void Hook_KeyValue(::edict_t* pEntity, ::KeyValueData* pKvData) noexcept
     static ::nlohmann::json jsTree{ };
     static ::KeyValueData kvData{ };
 
+    static int nEntity{ };
     static bool bError{ };
     static char szClassName[256]{ }, szKeyName[256]{ }, szValue[256]{ };
 
@@ -3304,6 +3412,23 @@ void Hook_KeyValue(::edict_t* pEntity, ::KeyValueData* pKvData) noexcept
         }
 
         ::g_bKvEditor = true;
+    }
+
+    if (pEntity)
+    {
+        if (pKvData)
+        {
+            if (pKvData->szKeyName)
+            {
+                if (*pKvData->szKeyName)
+                {
+                    if ((nEntity = ::ENTINDEX(pEntity)) > -1)
+                    {
+                        ::g_mapKeyValues[nEntity][pKvData->szKeyName] = pKvData->szValue ? pKvData->szValue : "";
+                    }
+                }
+            }
+        }
     }
 
     if (!bError)
@@ -3546,21 +3671,21 @@ void Hook_ClientDisconnect(::edict_t* pEntity) noexcept
     while (false);
 }
 
-#ifdef WIN32
-
-constexpr void Hook_ServerDeactivate_Post() noexcept
-
-#else
-
 void Hook_ServerDeactivate_Post() noexcept
-
-#endif
-
 {
+    static int nIter{ };
+
     {
         ::g_bStripper = { };
         ::g_bKvEditor = { };
         ::g_bKvAdder = { };
+
+        {
+            for (nIter = { }; nIter < 16384; nIter++)
+            {
+                ::g_mapKeyValues[nIter].clear();
+            }
+        }
     }
 
     do
