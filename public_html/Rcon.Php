@@ -172,6 +172,8 @@
                 " . $Idx . "
             </title>
 
+            <link rel=\"shortcut icon\" type=\"image/png\" href=\"" . $Dns . "terminal.ico\" />
+
             <style>
 
                 html *
