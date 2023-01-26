@@ -26,8 +26,8 @@
             platform |all_source_engine_paths|platform/platform_misc.vpk
             mod+mod_write+default_write_path |gameinfo_path|.
             game+game_write dod
+            gamebin dod/addons/metamod/bin/linux64
             gamebin dod/addons/metamod/bin
-            // gamebin dod/addons/metamod/bin/linux64
             gamebin dod/bin
             game |all_source_engine_paths|hl2
             platform |all_source_engine_paths|platform
