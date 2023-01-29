@@ -238,3 +238,24 @@ void operator delete (void*);
 void operator delete[](void*);
 
 #endif
+
+#ifdef WIN32
+
+extern bool g_bMultiMediaFeatureIsActive;
+extern bool g_bMultiMediaFeatureShouldStopThreadWorker;
+
+extern unsigned int g_uiMultiMediaFeatureTimerResolution;
+extern unsigned int g_uiMultiMediaFeatureMinPeriodAvail;
+
+extern void* g_pMultiMediaFeatureThreadWorkerHandle;
+
+#endif
+
+#ifdef WIN32
+
+unsigned long __stdcall MultiMediaFeatureThreadWorkerFunction(void*) noexcept;
+
+void MultiMediaFeatureTryAttach() noexcept;
+void MultiMediaFeatureTryDetach() noexcept;
+
+#endif

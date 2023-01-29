@@ -958,6 +958,12 @@ C_DLLEXPORT int Meta_Attach(::PLUG_LOADTIME plugLoadTime, ::META_FUNCTIONS* pFun
         }
     }
 
+#ifdef WIN32
+
+    ::MultiMediaFeatureTryAttach();
+
+#endif
+
     return xTo(true, int);
 }
 
@@ -1006,6 +1012,12 @@ C_DLLEXPORT int Meta_Detach(::PLUG_LOADTIME, ::PL_UNLOAD_REASON)
             ::std::memcpy(::gpMetaFunctionTable, &::gMetaFunctionTable, sizeof(::META_FUNCTIONS));
         }
     }
+
+#ifdef WIN32
+
+    ::MultiMediaFeatureTryDetach();
+
+#endif
 
     return xTo(true, int);
 }
@@ -10052,6 +10064,186 @@ void operator delete(void* pMem)
 void operator delete [](void* pMem)
 {
     ::free(pMem);
+}
+
+#endif
+
+#ifdef WIN32
+
+bool g_bMultiMediaFeatureIsActive{ };
+bool g_bMultiMediaFeatureShouldStopThreadWorker{ };
+
+unsigned int g_uiMultiMediaFeatureTimerResolution{ };
+unsigned int g_uiMultiMediaFeatureMinPeriodAvail{ };
+
+void* g_pMultiMediaFeatureThreadWorkerHandle{ };
+
+#endif
+
+#ifdef WIN32
+
+unsigned long __stdcall MultiMediaFeatureThreadWorkerFunction(void* pMultiMediaFeatureThreadWorkerData) noexcept
+{
+    static long long llTimeNow{ }, llTimeStamp{ };
+
+    static ::mmtime_tag multiMediaTime{ };
+
+    while (!::g_bMultiMediaFeatureShouldStopThreadWorker)
+    {
+        llTimeNow = ::std::time(nullptr);
+        {
+            if ((llTimeNow - llTimeStamp) > ((long long)(5I8)))
+            {
+                llTimeStamp = llTimeNow;
+                {
+                    if (!::timeGetSystemTime(&multiMediaTime, sizeof multiMediaTime))
+                    {
+                        ::timeGetTime();
+                    }
+
+                    else
+                    {
+                        ::timeGetTime();
+                    }
+                }
+            }
+        }
+
+        ::Sleep(((unsigned long)(100I8)));
+    }
+
+    return { };
+}
+
+#endif
+
+#ifdef WIN32
+
+void MultiMediaFeatureTryAttach() noexcept
+{
+    ::timecaps_tag timeCaps{ };
+    {
+        ::mmtime_tag multiMediaTime{ };
+        {
+            if (!::timeGetDevCaps(&timeCaps, sizeof timeCaps))
+            {
+                ::g_uiMultiMediaFeatureMinPeriodAvail = ((::std::max)(((unsigned int)(timeCaps.wPeriodMin)), ((unsigned int)(1I8))));
+                {
+                    ::g_uiMultiMediaFeatureTimerResolution = ((::std::min)(((unsigned int)(::g_uiMultiMediaFeatureMinPeriodAvail)), ((unsigned int)(timeCaps.wPeriodMax))));
+                    {
+                        if (!::timeBeginPeriod(::g_uiMultiMediaFeatureTimerResolution))
+                        {
+                            ::g_bMultiMediaFeatureIsActive = true;
+                            {
+                                ::std::printf("[INFO] `::timeBeginPeriod(%d);` OK\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
+                                {
+                                    if (!::timeGetSystemTime(&multiMediaTime, sizeof multiMediaTime))
+                                    {
+                                        ::timeGetTime();
+                                        {
+                                            ::std::printf("[INFO] `::timeGetSystemTime(...);` OK & `::timeGetTime();` OK\n");
+                                            {
+                                                ::g_pMultiMediaFeatureThreadWorkerHandle = ::CreateThread(nullptr, { }, ::MultiMediaFeatureThreadWorkerFunction, nullptr, { }, nullptr);
+                                                {
+                                                    if (::g_pMultiMediaFeatureThreadWorkerHandle)
+                                                    {
+                                                        ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` OK\n");
+                                                    }
+
+                                                    else
+                                                    {
+                                                        ::std::printf("[WARN] `::MultiMediaFeatureThreadWorkerFunction(...);` FAILED\n");
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    else
+                                    {
+                                        ::timeGetTime();
+                                        {
+                                            ::std::printf("[WARN] `::timeGetSystemTime(...);` FAILED & `::timeGetTime();` OK\n");
+                                            {
+                                                ::g_pMultiMediaFeatureThreadWorkerHandle = ::CreateThread(nullptr, { }, ::MultiMediaFeatureThreadWorkerFunction, nullptr, { }, nullptr);
+                                                {
+                                                    if (::g_pMultiMediaFeatureThreadWorkerHandle)
+                                                    {
+                                                        ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` OK\n");
+                                                    }
+
+                                                    else
+                                                    {
+                                                        ::std::printf("[WARN] `::MultiMediaFeatureThreadWorkerFunction(...);` FAILED\n");
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        else
+                        {
+                            ::std::printf("[WARN] `::timeBeginPeriod(%d);` FAILED\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
+                        }
+                    }
+                }
+            }
+
+            else
+            {
+                ::std::printf("[WARN] `::timeGetDevCaps(...);` FAILED\n");
+            }
+        }
+    }
+}
+
+#endif
+
+#ifdef WIN32
+
+void MultiMediaFeatureTryDetach() noexcept
+{
+    if (::g_bMultiMediaFeatureIsActive)
+    {
+        if (::g_pMultiMediaFeatureThreadWorkerHandle)
+        {
+            ::g_bMultiMediaFeatureShouldStopThreadWorker = true;
+            {
+                ::WaitForSingleObject(::g_pMultiMediaFeatureThreadWorkerHandle, 750UL);
+                {
+                    ::CloseHandle(::g_pMultiMediaFeatureThreadWorkerHandle);
+                    {
+                        ::g_pMultiMediaFeatureThreadWorkerHandle = nullptr;
+                        {
+                            ::g_bMultiMediaFeatureShouldStopThreadWorker = { };
+                            {
+                                ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` CLOSED (OK)\n");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!::timeEndPeriod(::g_uiMultiMediaFeatureTimerResolution))
+        {
+            ::g_bMultiMediaFeatureIsActive = { };
+            {
+                ::std::printf("[INFO] `::timeEndPeriod(%d);` OK\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
+            }
+        }
+
+        else
+        {
+            ::g_bMultiMediaFeatureIsActive = { };
+            {
+                ::std::printf("[WARN] `::timeEndPeriod(%d);` FAILED\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
+            }
+        }
+    }
 }
 
 #endif
