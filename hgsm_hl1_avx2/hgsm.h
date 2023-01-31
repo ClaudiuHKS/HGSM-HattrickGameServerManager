@@ -121,6 +121,7 @@ extern bool g_bFixScore;
 extern bool g_bFixDeaths;
 extern bool g_bFixKills;
 extern bool g_bKeepHelmet;
+extern bool g_bHourlyRestart;
 
 extern bool g_bOneReliable;
 extern bool g_bAllReliable;

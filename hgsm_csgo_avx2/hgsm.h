@@ -409,6 +409,7 @@ extern bool g_bZeroMoney;
 extern bool g_bFixScore;
 extern bool g_bKeepHelmet;
 extern bool g_bReliable;
+extern bool g_bHourlyRestart;
 
 extern int g_nDeaths[80];
 extern int g_nKills[80];

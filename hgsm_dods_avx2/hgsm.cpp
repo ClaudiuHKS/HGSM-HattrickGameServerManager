@@ -83,6 +83,7 @@ bool g_bFixKills{ };
 bool g_bFixDeaths{ };
 bool g_bKeepHelmet{ };
 bool g_bReliable{ };
+bool g_bHourlyRestart{ };
 
 int g_nDeaths[80]{ };
 int g_nKills[80]{ };
@@ -1303,6 +1304,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
             ::std::printf("'Ticks Loop' Is Now '%d'\n", ::g_nTicks);
             ::std::printf("'Keep Helmet' Is Now '%s'\n", ::g_bKeepHelmet ? "TRUE" : "FALSE");
             ::std::printf("'Reliable' Is Now '%s'\n", ::g_bReliable ? "TRUE" : "FALSE");
+            ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
             ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
             ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
             ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
@@ -1359,6 +1361,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                     ::std::printf("'Ticks Loop' Is Now '%d'\n", ::g_nTicks);
                     ::std::printf("'Keep Helmet' Is Now '%s'\n", ::g_bKeepHelmet ? "TRUE" : "FALSE");
                     ::std::printf("'Reliable' Is Now '%s'\n", ::g_bReliable ? "TRUE" : "FALSE");
+                    ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
                     ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
                     ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
                     ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
@@ -1424,6 +1427,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                         ::std::printf("'Ticks Loop' Is Now '%d'\n", ::g_nTicks);
                         ::std::printf("'Keep Helmet' Is Now '%s'\n", ::g_bKeepHelmet ? "TRUE" : "FALSE");
                         ::std::printf("'Reliable' Is Now '%s'\n", ::g_bReliable ? "TRUE" : "FALSE");
+                        ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
                         ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
                         ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
                         ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
@@ -1479,6 +1483,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                             ::std::printf("'Ticks Loop' Is Now '%d'\n", ::g_nTicks);
                             ::std::printf("'Keep Helmet' Is Now '%s'\n", ::g_bKeepHelmet ? "TRUE" : "FALSE");
                             ::std::printf("'Reliable' Is Now '%s'\n", ::g_bReliable ? "TRUE" : "FALSE");
+                            ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
                             ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
                             ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
                             ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
@@ -1534,6 +1539,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                                 ::std::printf("'Ticks Loop' Is Now '%d'\n", ::g_nTicks);
                                 ::std::printf("'Keep Helmet' Is Now '%s'\n", ::g_bKeepHelmet ? "TRUE" : "FALSE");
                                 ::std::printf("'Reliable' Is Now '%s'\n", ::g_bReliable ? "TRUE" : "FALSE");
+                                ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
                                 ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
                                 ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
                                 ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
@@ -1631,6 +1637,24 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                             ::g_bReliable = jsTree["Reliable"].get < bool >();
                             {
                                 ::std::printf("'Reliable' Is Now '%s'\n", ::g_bReliable ? "TRUE" : "FALSE");
+                            }
+                        }
+
+                        if (jsTree["Hourly Restart"].empty())
+                        {
+                            ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
+                        }
+
+                        else if (!jsTree["Hourly Restart"].is_boolean())
+                        {
+                            ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
+                        }
+
+                        else
+                        {
+                            ::g_bHourlyRestart = jsTree["Hourly Restart"].get < bool >();
+                            {
+                                ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
                             }
                         }
 
@@ -3875,6 +3899,9 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
     static bool bOffs{ }, bUpdate{ }, bMsgs{ };
     static int nPlayer{ }, nIter{ }, nHealth{ };
     static const char* pszServerClassName{ };
+    static long long llTime{ }, llStamp{ };
+
+    static ::std::string strCmd{ };
 
     static ::RecipientFilter recipientFilter{ };
     static ::SendPropInfo sendPropInfo{ };
@@ -5459,6 +5486,173 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
                 if (::g_nArmor)
                 {
                     ::g_bArmor[nPlayer] = { };
+                }
+            }
+        }
+
+        if (::g_bHourlyRestart)
+        {
+            llTime = ::std::time(nullptr);
+            {
+                if (llTime - llStamp > 0)
+                {
+                    if (!((llTime + 15) % 3600))
+                    {
+                        strCmd.assign("say");
+                        {
+                            strCmd.append(" ");
+                            {
+                                strCmd.append("CHANGING MAP TO");
+                                {
+                                    strCmd.append(" ");
+                                    {
+                                        strCmd.append(::gpGlobals->mapname.ToCStr());
+                                        {
+                                            strCmd.append(" ");
+                                            {
+                                                strCmd.append("IN 15 SECONDS");
+                                                {
+                                                    strCmd.append("\n");
+                                                    {
+                                                        strCmd.shrink_to_fit();
+                                                        {
+                                                            ::engine->ServerCommand(strCmd.c_str());
+                                                            {
+                                                                strCmd.clear();
+                                                                {
+                                                                    strCmd.shrink_to_fit();
+                                                                    {
+                                                                        llStamp = llTime;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    else if (!((llTime + 10) % 3600))
+                    {
+                        strCmd.assign("say");
+                        {
+                            strCmd.append(" ");
+                            {
+                                strCmd.append("CHANGING MAP TO");
+                                {
+                                    strCmd.append(" ");
+                                    {
+                                        strCmd.append(::gpGlobals->mapname.ToCStr());
+                                        {
+                                            strCmd.append(" ");
+                                            {
+                                                strCmd.append("IN 10 SECONDS");
+                                                {
+                                                    strCmd.append("\n");
+                                                    {
+                                                        strCmd.shrink_to_fit();
+                                                        {
+                                                            ::engine->ServerCommand(strCmd.c_str());
+                                                            {
+                                                                strCmd.clear();
+                                                                {
+                                                                    strCmd.shrink_to_fit();
+                                                                    {
+                                                                        llStamp = llTime;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    else if (!((llTime + 5) % 3600))
+                    {
+                        strCmd.assign("say");
+                        {
+                            strCmd.append(" ");
+                            {
+                                strCmd.append("CHANGING MAP TO");
+                                {
+                                    strCmd.append(" ");
+                                    {
+                                        strCmd.append(::gpGlobals->mapname.ToCStr());
+                                        {
+                                            strCmd.append(" ");
+                                            {
+                                                strCmd.append("IN 5 SECONDS");
+                                                {
+                                                    strCmd.append("\n");
+                                                    {
+                                                        strCmd.shrink_to_fit();
+                                                        {
+                                                            ::engine->ServerCommand(strCmd.c_str());
+                                                            {
+                                                                strCmd.clear();
+                                                                {
+                                                                    strCmd.shrink_to_fit();
+                                                                    {
+                                                                        llStamp = llTime;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    else if (!(llTime % 3600))
+                    {
+                        strCmd.assign("changelevel");
+                        {
+                            strCmd.append(" ");
+                            {
+                                strCmd.append("\"");
+                                {
+                                    strCmd.append(::gpGlobals->mapname.ToCStr());
+                                    {
+                                        strCmd.append("\"");
+                                        {
+                                            strCmd.append("\n");
+                                            {
+                                                strCmd.shrink_to_fit();
+                                                {
+                                                    ::engine->ServerCommand(strCmd.c_str());
+                                                    {
+                                                        strCmd.clear();
+                                                        {
+                                                            strCmd.shrink_to_fit();
+                                                            {
+                                                                llStamp = llTime;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

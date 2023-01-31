@@ -91,6 +91,7 @@ bool g_bFixScore{ };
 bool g_bFixKills{ };
 bool g_bFixDeaths{ };
 bool g_bKeepHelmet{ };
+bool g_bHourlyRestart{ };
 
 bool g_bOneReliable{ };
 bool g_bAllReliable{ };
@@ -1588,6 +1589,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
     ::g_bFixDeaths = { };
     ::g_bNoWeapons = { };
     ::g_bKeepHelmet = { };
+    ::g_bHourlyRestart = { };
     ::g_bOneReliable = { };
     ::g_bAllReliable = { };
 
@@ -2093,6 +2095,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
         {
             ::std::printf("'Ticks Loop' Is Now '%d'\n", ::g_nTicks);
             ::std::printf("'Keep Helmet' Is Now '%s'\n", ::g_bKeepHelmet ? "TRUE" : "FALSE");
+            ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
             ::std::printf("'No Weapons' Is Now '%s'\n", ::g_bNoWeapons ? "TRUE" : "FALSE");
             ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
@@ -2170,6 +2173,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
 
         ::std::printf("'Ticks Loop' Is Now '%d'\n", ::g_nTicks);
         ::std::printf("'Keep Helmet' Is Now '%s'\n", ::g_bKeepHelmet ? "TRUE" : "FALSE");
+        ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
         ::std::printf("'No Weapons' Is Now '%s'\n", ::g_bNoWeapons ? "TRUE" : "FALSE");
         ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
         ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
@@ -2249,6 +2253,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
         {
             ::std::printf("'Ticks Loop' Is Now '%d'\n", ::g_nTicks);
             ::std::printf("'Keep Helmet' Is Now '%s'\n", ::g_bKeepHelmet ? "TRUE" : "FALSE");
+            ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
             ::std::printf("'No Weapons' Is Now '%s'\n", ::g_bNoWeapons ? "TRUE" : "FALSE");
             ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
@@ -2325,6 +2330,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
             {
                 ::std::printf("'Ticks Loop' Is Now '%d'\n", ::g_nTicks);
                 ::std::printf("'Keep Helmet' Is Now '%s'\n", ::g_bKeepHelmet ? "TRUE" : "FALSE");
+                ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
                 ::std::printf("'No Weapons' Is Now '%s'\n", ::g_bNoWeapons ? "TRUE" : "FALSE");
                 ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
@@ -2399,6 +2405,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
             {
                 ::std::printf("'Ticks Loop' Is Now '%d'\n", ::g_nTicks);
                 ::std::printf("'Keep Helmet' Is Now '%s'\n", ::g_bKeepHelmet ? "TRUE" : "FALSE");
+                ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
                 ::std::printf("'No Weapons' Is Now '%s'\n", ::g_bNoWeapons ? "TRUE" : "FALSE");
                 ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
@@ -2498,6 +2505,24 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
         ::g_bKeepHelmet = jsTree["Keep Helmet"].get < bool >();
         {
             ::std::printf("'Keep Helmet' Is Now '%s'\n", ::g_bKeepHelmet ? "TRUE" : "FALSE");
+        }
+    }
+
+    if (jsTree["Hourly Restart"].empty())
+    {
+        ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
+    }
+
+    else if (!jsTree["Hourly Restart"].is_boolean())
+    {
+        ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
+    }
+
+    else
+    {
+        ::g_bHourlyRestart = jsTree["Hourly Restart"].get < bool >();
+        {
+            ::std::printf("'Hourly Restart' Is Now '%s'\n", ::g_bHourlyRestart ? "TRUE" : "FALSE");
         }
     }
 
@@ -4045,8 +4070,11 @@ void Hook_ServerActivate_Post(::edict_t*, int, int) noexcept
 
 void Hook_StartFrame_Post() noexcept
 {
+    static long long llTime{ }, llStamp{ };
     static int nEntity{ }, nIter{ }, nFov{ }, nTeam{ }, nKevlar{ };
     static bool bAltered{ }, bMsgs{ };
+
+    static ::std::string strCmd{ };
 
     static ::edict_t* pEntity{ };
 
@@ -5797,6 +5825,173 @@ void Hook_StartFrame_Post() noexcept
                 if (::g_bHideRadar)
                 {
                     ::g_bRadar[nEntity] = { };
+                }
+            }
+        }
+
+        if (::g_bHourlyRestart)
+        {
+            llTime = ::std::time(nullptr);
+            {
+                if (llTime - llStamp > 0)
+                {
+                    if (!((llTime + 15) % 3600))
+                    {
+                        strCmd.assign("say");
+                        {
+                            strCmd.append(" ");
+                            {
+                                strCmd.append("CHANGING MAP TO");
+                                {
+                                    strCmd.append(" ");
+                                    {
+                                        strCmd.append(STRING(::gpGlobals->mapname));
+                                        {
+                                            strCmd.append(" ");
+                                            {
+                                                strCmd.append("IN 15 SECONDS");
+                                                {
+                                                    strCmd.append("\n");
+                                                    {
+                                                        strCmd.shrink_to_fit();
+                                                        {
+                                                            (*::g_engfuncs.pfnServerCommand) (strCmd.c_str());
+                                                            {
+                                                                strCmd.clear();
+                                                                {
+                                                                    strCmd.shrink_to_fit();
+                                                                    {
+                                                                        llStamp = llTime;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    else if (!((llTime + 10) % 3600))
+                    {
+                        strCmd.assign("say");
+                        {
+                            strCmd.append(" ");
+                            {
+                                strCmd.append("CHANGING MAP TO");
+                                {
+                                    strCmd.append(" ");
+                                    {
+                                        strCmd.append(STRING(::gpGlobals->mapname));
+                                        {
+                                            strCmd.append(" ");
+                                            {
+                                                strCmd.append("IN 10 SECONDS");
+                                                {
+                                                    strCmd.append("\n");
+                                                    {
+                                                        strCmd.shrink_to_fit();
+                                                        {
+                                                            (*::g_engfuncs.pfnServerCommand) (strCmd.c_str());
+                                                            {
+                                                                strCmd.clear();
+                                                                {
+                                                                    strCmd.shrink_to_fit();
+                                                                    {
+                                                                        llStamp = llTime;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    else if (!((llTime + 5) % 3600))
+                    {
+                        strCmd.assign("say");
+                        {
+                            strCmd.append(" ");
+                            {
+                                strCmd.append("CHANGING MAP TO");
+                                {
+                                    strCmd.append(" ");
+                                    {
+                                        strCmd.append(STRING(::gpGlobals->mapname));
+                                        {
+                                            strCmd.append(" ");
+                                            {
+                                                strCmd.append("IN 5 SECONDS");
+                                                {
+                                                    strCmd.append("\n");
+                                                    {
+                                                        strCmd.shrink_to_fit();
+                                                        {
+                                                            (*::g_engfuncs.pfnServerCommand) (strCmd.c_str());
+                                                            {
+                                                                strCmd.clear();
+                                                                {
+                                                                    strCmd.shrink_to_fit();
+                                                                    {
+                                                                        llStamp = llTime;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    else if (!(llTime % 3600))
+                    {
+                        strCmd.assign("changelevel");
+                        {
+                            strCmd.append(" ");
+                            {
+                                strCmd.append("\"");
+                                {
+                                    strCmd.append(STRING(::gpGlobals->mapname));
+                                    {
+                                        strCmd.append("\"");
+                                        {
+                                            strCmd.append("\n");
+                                            {
+                                                strCmd.shrink_to_fit();
+                                                {
+                                                    (*::g_engfuncs.pfnServerCommand) (strCmd.c_str());
+                                                    {
+                                                        strCmd.clear();
+                                                        {
+                                                            strCmd.shrink_to_fit();
+                                                            {
+                                                                llStamp = llTime;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
