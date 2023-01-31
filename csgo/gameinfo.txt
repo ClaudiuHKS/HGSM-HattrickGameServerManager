@@ -24,6 +24,7 @@
         SearchPaths
         {
             GameBin |gameinfo_path|addons/metamod/bin/linux64
+            GameBin |gameinfo_path|addons/metamod/bin/win64
             GameBin |gameinfo_path|addons/metamod/bin
             GameBin |gameinfo_path|bin
             Game |gameinfo_path|.

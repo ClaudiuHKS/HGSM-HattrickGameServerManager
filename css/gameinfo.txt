@@ -31,6 +31,7 @@
             mod+mod_write+default_write_path |gameinfo_path|.
             game+game_write cstrike
             gamebin cstrike/addons/metamod/bin/linux64
+            gamebin cstrike/addons/metamod/bin/win64
             gamebin cstrike/addons/metamod/bin
             gamebin cstrike/bin
             game |all_source_engine_paths|hl2
