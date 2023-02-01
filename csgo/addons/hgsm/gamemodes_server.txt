@@ -14,7 +14,36 @@
                     {
                         "exec"      "server.cfg"
                     }
+
+                    "mapgroupsMP"
+                    {
+                        "snow"      ""
+                        "mirage"    ""
+                    }
                 }
+            }
+        }
+    }
+
+    "mapgroups"
+    {
+        "snow"
+        {
+            "name"          "snow"
+
+            "maps"
+            {
+                "fy_snow"   ""
+            }
+        }
+
+        "mirage"
+        {
+            "name"          "mirage"
+
+            "maps"
+            {
+                "de_mirage" ""
             }
         }
     }

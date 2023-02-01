@@ -58,7 +58,7 @@ mat_spewalloc                                                    | 0            
 cash_team_winner_bonus_consecutive_rounds                        | 0                | 0                |                |                | 
 cash_team_rescued_hostage                                        | 0                | 0                |                |                | 
 voice_vox                                                        | false            | false            |                |                | 
-sv_maxusrcmdprocessticks                                         | 0                | 16               |                |                | Maximum number of client-issued usrcmd ticks that can be replayed in packet loss conditions, 0 to allow no restrictions
+sv_maxusrcmdprocessticks                                         | 1                | 16               |                |                | Maximum number of client-issued usrcmd ticks that can be replayed in packet loss conditions, 0 to allow no restrictions
 sv_voice_proximity                                               | -1               | -1               |                |                | 
 bot_autodifficulty_threshold_high                                | 5.0              | 5.0              | -20.000000     | 20.000000      | Upper bound above Average Human Contribution Score that a bot must be above to change its difficulty
 cash_team_win_by_defusing_bomb                                   | 3250             | 3250             |                |                | 
@@ -917,7 +917,7 @@ sv_maxusrcmdprocessticks_holdaim                                 | 1            
 mp_halftime_duration                                             | 15.0             | 15.0             | 0.000000       | 300.000000     | Number of seconds that halftime lasts
 mp_dogtag_despawn_on_killer_death                                | 1                | 1                |                |                | Whether dogtags should despawn when their killer dies
 cash_player_killed_enemy_default                                 | 300              | 300              |                |                | 
-hgsm_version                                                     | Jan 4 2023       | Jan 4 2023       |                |                | Hattrick Game Server Manager Version
+hgsm_version                                                     | Jan 31 2023      | Jan 31 2023      |                |                | Hattrick Game Server Manager Version
 snd_obscured_gain_dB                                             | -2.70            | -2.70            |                |                | 
 phys_show_active                                                 | 0                | 0                |                |                | 
 mp_c4_cannot_be_defused                                          | 0                | 0                |                |                | If set, the planted c4 cannot be defused.
@@ -1633,7 +1633,7 @@ r_flashlightscissor                                              | 0            
 ai_follow_use_points                                             | 1                | 1                |                |                | 
 healthshot_health                                                | 50               | 50               |                |                | 
 r_dynamiclighting                                                | 1                | 1                |                |                | 
-sv_max_dropped_packets_to_process                                | 0                | 10               |                |                | Max dropped packets to process. Lower settings prevent lagged players from simulating too far in the past. Setting of 0 disables cap.
+sv_max_dropped_packets_to_process                                | 1                | 10               |                |                | Max dropped packets to process. Lower settings prevent lagged players from simulating too far in the past. Setting of 0 disables cap.
 lightcache_maxmiss                                               | 2                | 2                |                |                | 
 vgui_drawtree_bounds                                             | 0                | 0                |                |                | Show panel bounds.
 vprof_unaccounted_limit                                          | 0.3              | 0.3              |                |                | number of milliseconds that a node must exceed to turn red in the vprof panel
@@ -2110,7 +2110,7 @@ sound_device_override                                            |              
 net_blockmsg                                                     | 0                | 0                |                |                | Discards incoming message: <0|1|name>
 r_bloomtintexponent                                              | 2.2              | 2.2              |                |                | 
 spec_replay_winddown_time                                        | 2                | 2                |                |                | The trailing time, in seconds, of replay past the event, including fade-out
-sv_clockcorrection_msecs                                         | 30               | 30               |                |                | The server tries to keep each player's m_nTickBase withing this many msecs of the server absolute tickcount
+sv_clockcorrection_msecs                                         | 10               | 30               |                |                | The server tries to keep each player's m_nTickBase withing this many msecs of the server absolute tickcount
 bot_allow_snipers                                                | 1                | 1                |                |                | If nonzero, bots may use sniper rifles.
 snd_find_channel                                                 |                  |                  |                |                | Scan every channel to find the corresponding sound.
 snd_showmixer                                                    | 0                | 0                |                |                | 
