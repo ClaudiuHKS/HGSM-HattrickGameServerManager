@@ -14,7 +14,36 @@
                     {
                         "exec"      "server.cfg"
                     }
+
+                    "mapgroupsMP"
+                    {
+                        "flash"     ""
+                        "kalt"      ""
+                    }
                 }
+            }
+        }
+    }
+
+    "mapgroups"
+    {
+        "flash"
+        {
+            "name"          "flash"
+
+            "maps"
+            {
+                "dod_flash" ""
+            }
+        }
+
+        "kalt"
+        {
+            "name"          "kalt"
+
+            "maps"
+            {
+                "dod_kalt"  ""
             }
         }
     }
