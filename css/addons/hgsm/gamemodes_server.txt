@@ -14,7 +14,25 @@
                     {
                         "exec"      "server.cfg"
                     }
+
+                    "mapgroupsMP"
+                    {
+                        "snow"      ""
+                    }
                 }
+            }
+        }
+    }
+
+    "mapgroups"
+    {
+        "snow"
+        {
+            "name"          "snow"
+
+            "maps"
+            {
+                "fy_snow"   ""
             }
         }
     }
