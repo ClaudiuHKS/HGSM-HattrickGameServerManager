@@ -172,50 +172,57 @@
                 " . $Idx . "
             </title>
 
-            <link rel=\"shortcut icon\" type=\"image/png\" href=\"" . $Dns . "terminal.ico\" />
+            <link rel=\"shortcut icon\" href=\"" . $Dns . "terminal.ico\" />
+            <link rel=\"icon\" href=\"" . $Dns . "terminal.ico\" />
 
             <style>
 
                 html *
                 {
-                    font-size:      12;
-                    color:          black;
-                    font-family:    Consolas;
+                    background-color:   white;
+                    font-size:          12;
+                    color:              black;
+                    font-family:        Consolas;
                 }
 
                 td, th
                 {
-                    padding-left:   10;
-                    padding-right:  10;
-                    padding-top:    2;
-                    padding-bottom: 2;
+                    padding-left:       10;
+                    padding-right:      10;
+                    padding-top:        2;
+                    padding-bottom:     2;
+                }
+
+                form
+                {
+                    margin:             0 auto;
                 }
 
                 img
                 {
-                    width:          16;
-                    height:         16;
+                    width:              24;
+                    height:             24;
                 }
 
                 th
                 {
-                    text-align:     left;
+                    text-align:         left;
                 }
 
                 input[type=text]
                 {
-                    width:          200;
+                    width:              200;
                 }
 
                 input[type=password]
                 {
-                    width:          200;
+                    width:              200;
                 }
 
                 textarea
                 {
-                    width:          750;
-                    height:         250;
+                    width:              750;
+                    height:             250;
                 }
 
             </style>";
@@ -321,7 +328,7 @@
 
                 $Map = @Mb_Strtolower(Trim($Inf['Map']));
                 {
-                    If (Ctype_Alnum($Map[0]))
+                    If (@Ctype_Alnum($Map[0]))
                     {
                         If ($Map[1] == '_')
                         {
@@ -392,7 +399,7 @@
                                 $Dns,
                                 ((Int)$Inf['Protocol']) == 48 ? "games_goldsrc" : "games_src",
                                 @Mb_Strtolower(Trim($Inf['ModDir'])),
-                                ((Int)$Inf['Protocol']) == 48 ? "gif" : "png",
+                                ((Int)$Inf['Protocol']) == 48 ? "png" : "png",
                                 @Htmlspecialchars(Trim($Inf['HostName'])),
                                 $Map,
                                 (Int)$Plr,
@@ -484,9 +491,9 @@
 
         Try
         {
-            $Qry->Connect($Srv[Abs(((Int)$_POST['srv']))], $Prt[Abs(((Int)$_POST['srv']))], $Eng[Abs(((Int)$_POST['srv']))]);
+            $Qry->Connect($Srv[@Abs(((Int)$_POST['srv']))], $Prt[@Abs(((Int)$_POST['srv']))], $Eng[@Abs(((Int)$_POST['srv']))]);
             {
-                $Qry->SetRconPassword($Pas[Abs(((Int)$_POST['srv']))]);
+                $Qry->SetRconPassword($Pas[@Abs(((Int)$_POST['srv']))]);
                 {
                     $Res = Trim($Qry->Rcon(Trim($_POST['cmd'])));
                 }
