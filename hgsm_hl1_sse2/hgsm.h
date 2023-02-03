@@ -260,3 +260,5 @@ void MultiMediaFeatureTryAttach() noexcept;
 void MultiMediaFeatureTryDetach() noexcept;
 
 #endif
+
+int numUsersPlaying() noexcept;

@@ -543,7 +543,7 @@ healthshot_health                                                | 50           
 healthshot_healthboost_damage_multiplier                         | 1                | 1                |                |                | 
 healthshot_healthboost_speed_multiplier                          | 1                | 1                |                |                | 
 healthshot_healthboost_time                                      | 0                | 0                |                |                | 
-hgsm_version                                                     | Jan 31 2023      | Jan 31 2023      |                |                | Hattrick Game Server Manager Version
+hgsm_version                                                     | Feb 3 2023       | Feb 3 2023       |                |                | Hattrick Game Server Manager Version
 hl2_episodic                                                     | 0                | 0                |                |                | 
 host_ShowIPCCallCount                                            | 0                | 0                |                |                | Print # of IPC calls this number of times per second. If set to -1, the # of IPC calls is shown every frame.
 host_flush_threshold                                             | 12               | 12               |                |                | Memory threshold below which the host should flush caches between server instances
@@ -832,7 +832,7 @@ mp_anyone_can_pickup_c4                                          | 0            
 mp_autocrosshair                                                 | 1                | 1                |                |                | 
 mp_autokick                                                      | 0                | 1                |                |                | Kick idle/team-killing/team-damaging players
 mp_autoteambalance                                               | 1                | 1                |                |                | 
-mp_backup_restore_load_autopause                                 | 1                | 1                |                |                | Whether to automatically pause the match after restoring round data from backup
+mp_backup_restore_load_autopause                                 | 0                | 1                |                |                | Whether to automatically pause the match after restoring round data from backup
 mp_backup_round_auto                                             | 0                | 1                |                |                | If enabled will keep in-memory backups to handle reconnecting players even if the backup files aren't written to disk
 mp_backup_round_file                                             |                  | backup           |                |                | If set then server will save all played rounds information to files filename_date_time_team1_team2_mapname_roundnum_score1_score2.txt
 mp_backup_round_file_last                                        |                  |                  |                |                | Every time a backup file is written the value of this convar gets updated to hold the name of the backup file.
@@ -851,7 +851,7 @@ mp_capdeteriorate_time                                           | 90.0         
 mp_capstyle                                                      | 1                | 1                |                |                | Sets the style of capture points used. 0 = Fixed players required to cap. 1 = More players cap faster, but longer cap times.
 mp_clan_ready_signal                                             | ready            | ready            |                |                | Text that team leader from each team must speak for the match to begin
 mp_clan_readyrestart                                             | 0                | 0                |                |                | If non-zero, game will restart once someone from each team gives the ready signal
-mp_competitive_endofmatch_extra_time                             | 0                | 15               |                |                | After a competitive match finishes rematch voting extra time is given for rankings.
+mp_competitive_endofmatch_extra_time                             | 20               | 15               |                |                | After a competitive match finishes rematch voting extra time is given for rankings.
 mp_consecutive_loss_aversion                                     | 1                | 1                | 0.000000       |                | How loss streak is affected with round win: 0 = win fully resets loss bonus, 1 = first win steps down loss bonus, 2 = first win holds loss bonus and step down starting with second win
 mp_consecutive_loss_max                                          | 4                | 4                | 0.000000       |                | 
 mp_coop_force_join_ct                                            | 0                | 0                |                |                | If set, real players will auto join CT on join.
@@ -875,7 +875,7 @@ mp_death_drop_gun                                                | 1            
 mp_death_drop_healthshot                                         | 0                | 1                | 0.000000       | 1.000000       | Drop healthshot on player death
 mp_death_drop_taser                                              | 1                | 1                | 0.000000       | 1.000000       | Drop taser on player death
 mp_deathcam_skippable                                            | 1                | 1                |                |                | Determines whether a player can early-out of the deathcam.
-mp_default_team_winner_no_objective                              | -1               | -1               |                |                | If the map doesn't define an objective (bomb, hostage, etc), the value of this convar will declare the winner when the time runs out in the round.
+mp_default_team_winner_no_objective                              | 2                | -1               |                |                | If the map doesn't define an objective (bomb, hostage, etc), the value of this convar will declare the winner when the time runs out in the round.
 mp_defaultteam                                                   | 0                | 0                |                |                | 
 mp_defuser_allocation                                            | 0                | 0                | 0.000000       | 2.000000       | How to allocate defusers to CTs at start or round: 0=none, 1=random, 2=everyone
 mp_disable_respawn_times                                         | 0                | 0                |                |                | 
@@ -895,8 +895,8 @@ mp_dm_teammode_dogtag_score                                      | 0            
 mp_dm_teammode_kill_score                                        | 1                | 1                |                |                | Team deathmatch victory points to award for enemy kill
 mp_dm_time_between_bonus_max                                     | 40               | 40               |                |                | Maximum time a bonus time will start after the round start or after the last bonus (in seconds)
 mp_dm_time_between_bonus_min                                     | 30               | 30               |                |                | Minimum time a bonus time will start after the round start or after the last bonus (in seconds)
-mp_do_warmup_offine                                              | 0                | 0                | 0.000000       | 1.000000       | Whether or not to do a warmup period at the start of a match in an offline (bot) match.
-mp_do_warmup_period                                              | 0                | 1                | 0.000000       | 1.000000       | Whether or not to do a warmup period at the start of a match.
+mp_do_warmup_offine                                              | 1                | 0                | 0.000000       | 1.000000       | Whether or not to do a warmup period at the start of a match in an offline (bot) match.
+mp_do_warmup_period                                              | 1                | 1                | 0.000000       | 1.000000       | Whether or not to do a warmup period at the start of a match.
 mp_dogtag_despawn_on_killer_death                                | 1                | 1                |                |                | Whether dogtags should despawn when their killer dies
 mp_dogtag_despawn_time                                           | 120              | 120              | 0.000000       |                | How many seconds dogtags should stay around before despawning automatically (0 = infinite)
 mp_dogtag_pickup_rule                                            | 0                | 0                |                |                | Who is eligible to pick up a dogtag (0 = killer only, 1 = killer's team, 2 = victim's team, 3 = killer & victim's team, 4 = anyone)
@@ -905,8 +905,8 @@ mp_drop_grenade_enable                                           | 1            
 mp_drop_knife_enable                                             | 1                | 0                |                |                | Allows players to drop knives.
 mp_economy_reset_rounds                                          | 0                | 0                |                |                | Reset all player money every N rounds (0 for never)
 mp_enableroundwaittime                                           | 1                | 1                |                |                | Enable timers to wait between rounds.
-mp_endmatch_votenextleveltime                                    | 0                | 20               |                |                | If mp_endmatch_votenextmap is set, players have this much time to vote on the next map at match end.
-mp_endmatch_votenextmap                                          | 0                | 1                |                |                | Whether or not players vote for the next map at the end of the match when the final scoreboard comes up
+mp_endmatch_votenextleveltime                                    | 10               | 20               |                |                | If mp_endmatch_votenextmap is set, players have this much time to vote on the next map at match end.
+mp_endmatch_votenextmap                                          | 1                | 1                |                |                | Whether or not players vote for the next map at the end of the match when the final scoreboard comes up
 mp_endmatch_votenextmap_keepcurrent                              | 1                | 1                |                |                | If set, keeps the current map in the list of voting options. If not set, the current map will not appear in the list of voting options.
 mp_endmatch_votenextmap_wargames_modes                           | armsrace demolit | armsrace demolit |                |                | Modes available for endmatch voting during War Games. Separate names with spaces.
 mp_endmatch_votenextmap_wargames_nummaps                         | 3                | 3                |                |                | Maximum number of maps to include in endmatch voting during War Games
@@ -924,7 +924,7 @@ mp_force_assign_teams                                            | 0            
 mp_force_pick_time                                               | 524288           | 15               |                |                | The amount of time a player has on the team screen to make a selection before being auto-teamed
 mp_forcecamera                                                   | 0                | 1                |                |                | Restricts spectator modes for dead players. 0 = Any team. 1 = Only own team. 2 = No one; fade to black on death (previously mp_fadetoblack).
 mp_forcerespawn                                                  | 1                | 1                |                |                | 
-mp_fraglimit                                                     | 0                | 0                |                |                | The number of kills at which the map ends
+mp_fraglimit                                                     | 5000             | 0                |                |                | The number of kills at which the map ends
 mp_free_armor                                                    | 1                | 0                |                |                | Determines whether kevlar (1+) and/or helmet (2+) are given automatically.
 mp_freezetime                                                    | 3.25             | 6                | 0.000000       | 60.000000      | how many seconds to keep players frozen when the round starts
 mp_friendlyfire                                                  | 0                | 0                |                |                | Allows team members to injure other members of their team
@@ -964,7 +964,7 @@ mp_guardian_special_kills_needed                                 | 10           
 mp_guardian_special_weapon_needed                                | awp              | awp              |                |                | The weapon that needs to be used to increment the kills needed to complete the mission.
 mp_guardian_target_site                                          | -1               | -1               |                |                | If set to the index of a bombsite, will cause random spawns to be only created near that site.
 mp_halftime                                                      | 0                | 0                |                |                | Determines whether the match switches sides in a halftime event.
-mp_halftime_duration                                             | 15.0             | 15.0             | 0.000000       | 300.000000     | Number of seconds that halftime lasts
+mp_halftime_duration                                             | 15               | 15.0             | 0.000000       | 300.000000     | Number of seconds that halftime lasts
 mp_halftime_pausematch                                           | 0                | 0                |                |                | Set to 1 to pause match after halftime countdown elapses. Match must be resumed by vote or admin.
 mp_halftime_pausetimer                                           | 0                | 0                |                |                | Set to 1 to stay in halftime indefinitely. Set to 0 to resume the timer.
 mp_heavyassaultsuit_aimpunch                                     | 1.0              | 1.0              |                |                | How much EXTRA aim punch will happen when a player wearing the assault suit gets when shot
@@ -995,12 +995,12 @@ mp_logdistance_sec                                               | 15           
 mp_logloadouts                                                   | 0                | 1                |                |                | Enables distance logging with full loadouts
 mp_logmoney                                                      | 0                | 0                | 0.000000       | 1.000000       | Enables money logging. Values are: 0=off, 1=on
 mp_match_can_clinch                                              | 0                | 1                |                |                | Can a team clinch and end the match by being so far ahead that the other team has no way to catching up?
-mp_match_end_changelevel                                         | 0                | 0                | 0.000000       | 1.000000       | At the end of the match, perform a changelevel even if next map is the same
+mp_match_end_changelevel                                         | 1                | 0                | 0.000000       | 1.000000       | At the end of the match, perform a changelevel even if next map is the same
 mp_match_end_restart                                             | 0                | 0                | 0.000000       | 1.000000       | At the end of the match, perform a restart instead of loading a new map
-mp_match_restart_delay                                           | 1.000000         | 25               | 1.000000       | 9999.000000    | Time (in seconds) until a match restarts.
+mp_match_restart_delay                                           | 20               | 25               | 1.000000       | 9999.000000    | Time (in seconds) until a match restarts.
 mp_max_armor                                                     | 1                | 2                |                |                | Determines the highest level of armor allowed to be purchased. (0) None, (1) Kevlar, (2) Helmet
 mp_maxmoney                                                      | 0                | 16000            | 0.000000       |                | maximum amount of money allowed in a player's account
-mp_maxrounds                                                     | 9999999          | 0                | 0.000000       |                | max number of rounds to play before server changes maps
+mp_maxrounds                                                     | 90               | 0                | 0.000000       |                | max number of rounds to play before server changes maps
 mp_molotovusedelay                                               | 0                | 15.0             | 0.000000       | 30.000000      | Number of seconds to delay before the molotov can be used after acquiring it
 mp_only_cts_rescue_hostages                                      | 1                | 1                |                |                | 
 mp_overtime_enable                                               | 0                | 0                |                |                | If a match ends in a tie, use overtime rules to determine winner
@@ -1012,7 +1012,7 @@ mp_player_healthbuffer_decay_rate                                | 0            
 mp_playercashawards                                              | 0                | 1                |                |                | Players can earn money by performing in-game actions
 mp_playerid                                                      | 2                | 0                | 0.000000       | 2.000000       | Controls what information player see in the status bar: 0 all names; 1 team names; 2 no names
 mp_playerid_delay                                                | 0                | 0.4              | 0.000000       | 1.000000       | Number of seconds to delay showing information in the status bar
-mp_playerid_hold                                                 | 0.1              | 0.1              | 0.000000       | 1.000000       | Number of seconds to keep showing old information in the status bar
+mp_playerid_hold                                                 | 0                | 0.1              | 0.000000       | 1.000000       | Number of seconds to keep showing old information in the status bar
 mp_radar_showall                                                 | 1                | 0                | 0.000000       | 3.000000       | Determines who should see all. 0 = default. 1 = both teams. 2 = Terrorists. 3 = Counter-Terrorists.
 mp_randomspawn                                                   | 0                | 0                |                |                | Determines whether players are to spawn. 0 = default; 1 = both teams; 2 = Terrorists; 3 = CTs.
 mp_randomspawn_dist                                              | 0                | 0                |                |                | If using mp_randomspawn, determines whether to test distance when selecting this spot.
@@ -1076,7 +1076,7 @@ mp_td_dmgtowarn                                                  | 200          
 mp_td_spawndmgthreshold                                          | 50               | 50               |                |                | The damage threshold players have to exceed at the start of the round to be warned/kick.
 mp_tdm_healthshot_killcount                                      | 3                | 3                |                |                | Grant healthshots in team deathmatch after n kills
 mp_team_timeout_max                                              | 0                | 1                |                |                | Number of timeouts each team gets per match.
-mp_team_timeout_time                                             | 60               | 60               |                |                | Duration of each timeout.
+mp_team_timeout_time                                             | 90               | 60               |                |                | Duration of each timeout.
 mp_teamcashawards                                                | 0                | 1                |                |                | Teams can earn money by performing in-game actions
 mp_teamflag_1                                                    |                  |                  |                |                | Enter a country's alpha 2 code to show that flag next to team 1's name in the spectator scoreboard.
 mp_teamflag_2                                                    |                  |                  |                |                | Enter a country's alpha 2 code to show that flag next to team 2's name in the spectator scoreboard.
@@ -1099,19 +1099,19 @@ mp_teams_unbalance_limit                                         | 1            
 mp_teamscore_1                                                   |                  |                  |                |                | A non-empty string for best-of-N maps won by the first team.
 mp_teamscore_2                                                   |                  |                  |                |                | A non-empty string for best-of-N maps won by the second team.
 mp_teamscore_max                                                 | 0                | 0                | 0.000000       | 7.000000       | How many maps to win the series (bo3 max=2; bo5 max=3; bo7 max=4)
-mp_technical_timeout_duration_s                                  | 0                | 0                |                |                | How many seconds is a full technical timeout?
+mp_technical_timeout_duration_s                                  | 90               | 0                |                |                | How many seconds is a full technical timeout?
 mp_technical_timeout_per_team                                    | 0                | 0                |                |                | How many technical timeouts are there per team?
-mp_timelimit                                                     | 0                | 5                |                |                | game time per map in minutes
+mp_timelimit                                                     | 90               | 5                |                |                | game time per map in minutes
 mp_tkpunish                                                      | 0                | 0                |                |                | Will TK'ers and team damagers be punished in the next round? {0=no, 1=yes}
 mp_tournament                                                    | 0                | 0                |                |                | 
 mp_tournament_whitelist                                          | item_whitelist.t | item_whitelist.t |                |                | Specifies the item whitelist file to use.
 mp_use_respawn_waves                                             | 0                | 0                |                |                | When set to 1, and that player's team is set to respawn, they will respawn in waves. If set to 2, teams will respawn when the whole team is dead.
-mp_verbose_changelevel_spew                                      | 1                | 1                |                |                | 
+mp_verbose_changelevel_spew                                      | 0                | 1                |                |                | 
 mp_waitingforplayers_cancel                                      | 0                | 0                |                |                | Set to 1 to end the WaitingForPlayers period.
 mp_waitingforplayers_restart                                     | 0                | 0                |                |                | Set to 1 to start or restart the WaitingForPlayers period.
 mp_waitingforplayers_time                                        | 0                | 0                |                |                | WaitingForPlayers time length in seconds
 mp_warmup_pausetimer                                             | 0                | 0                |                |                | Set to 1 to stay in warmup indefinitely. Set to 0 to resume the timer.
-mp_warmuptime                                                    | 5.000000         | 30               | 5.000000       |                | How long the warmup period lasts. Changing this value resets warmup.
+mp_warmuptime                                                    | 30               | 30               | 5.000000       |                | How long the warmup period lasts. Changing this value resets warmup.
 mp_warmuptime_all_players_connected                              | 0                | 0                |                |                | Warmup time to use when all players have connected. 0 to disable.
 mp_weapon_melee_touch_time_after_hit                             | 5.0              | 5.0              |                |                | 
 mp_weapon_next_owner_touch_time                                  | 1.3              | 1.3              |                |                | 
@@ -1128,7 +1128,7 @@ mp_weapons_allow_zeus                                            | 1            
 mp_weapons_glow_on_ground                                        | 0                | 0                |                |                | If this convar is set, weapons on the ground will have a glow around them.
 mp_weapons_max_gun_purchases_per_weapon_per_match                | -1               | -1               | -1.000000      | 1.000000       | Max number of times a player may purchase any weapon per match
 mp_weaponstay                                                    | 0                | 0                |                |                | 
-mp_win_panel_display_time                                        | 0                | 3                |                |                | The amount of time to show the win panel between matches / halfs
+mp_win_panel_display_time                                        | 5                | 3                |                |                | The amount of time to show the win panel between matches / halfs
 mp_winlimit                                                      | 0                | 0                | 0.000000       |                | Max score one team can reach before server changes maps
 name                                                             | unnamed          | unnamed          |                |                | Current user name
 nav_approach_points_area_size_threshold                          | 200              | 200              |                |                | Ignore nav areas with at least one side smaller than this amount during approach point calculation.
@@ -2143,7 +2143,7 @@ sv_showanimstate_log                                             | 0            
 sv_showbullethits                                                | 0                | 0                |                |                | 1=show hits and near misses, 2=show hits only
 sv_showimpacts                                                   | 0                | 0                |                |                | Shows client (red) and server (blue) bullet impact point (1=both, 2=client-only, 3=server-only)
 sv_showimpacts_penetration                                       | 0                | 0                |                |                | Shows extra data when bullets penetrate. (use sv_showimpacts_time to increase time shown)
-sv_showimpacts_time                                              | 4                | 4                | 0.000000       | 10.000000      | Duration bullet impact indicators remain before disappearing
+sv_showimpacts_time                                              | 0                | 4                | 0.000000       | 10.000000      | Duration bullet impact indicators remain before disappearing
 sv_showladders                                                   | 0                | 0                |                |                | Show bbox and dismount points for all ladders (must be set before level load.) 
 sv_showlagcompensation                                           | 0                | 0                |                |                | Show lag compensated hitboxes whenever a player is lag compensated.
 sv_showlagcompensation_duration                                  | 4.0              | 4.0              | 0.000000       | 10.000000      | Duration to show lag-compensated hitboxes
@@ -2216,16 +2216,16 @@ sv_voice_proximity_positional                                    | 0            
 sv_voice_proximity_use_falloff                                   | 0                | 0                |                |                | 
 sv_voicecodec                                                    | vaudio_celt      | vaudio_celt      |                |                | Specifies which voice codec DLL to use in a game. Set to the name of the DLL without the extension.
 sv_voiceenable                                                   | 1                | 1                |                |                | 
-sv_vote_allow_in_warmup                                          | 0                | 0                |                |                | Allow voting during warmup?
-sv_vote_allow_spectators                                         | 0                | 0                |                |                | Allow spectators to initiate votes?
-sv_vote_command_delay                                            | 0                | 2                |                | 4.500000       | How long after a vote passes until the action happens
-sv_vote_count_spectator_votes                                    | 0                | 0                |                |                | Allow spectators to vote on issues?
-sv_vote_creation_timer                                           | 0                | 120              |                |                | How often someone can individually call a vote.
-sv_vote_disallow_kick_on_match_point                             | 0                | 0                |                |                | Disallow vote kicking on the match point round.
-sv_vote_failure_timer                                            | 0                | 300              |                |                | A vote that fails cannot be re-submitted for this long
+sv_vote_allow_in_warmup                                          | 1                | 0                |                |                | Allow voting during warmup?
+sv_vote_allow_spectators                                         | 1                | 0                |                |                | Allow spectators to initiate votes?
+sv_vote_command_delay                                            | 2.5              | 2                |                | 4.500000       | How long after a vote passes until the action happens
+sv_vote_count_spectator_votes                                    | 1                | 0                |                |                | Allow spectators to vote on issues?
+sv_vote_creation_timer                                           | 60               | 120              |                |                | How often someone can individually call a vote.
+sv_vote_disallow_kick_on_match_point                             | 1                | 0                |                |                | Disallow vote kicking on the match point round.
+sv_vote_failure_timer                                            | 180              | 300              |                |                | A vote that fails cannot be re-submitted for this long
 sv_vote_issue_changelevel_allowed                                | 1                | 1                |                |                | Can people hold votes to change levels?
 sv_vote_issue_kick_allowed                                       | 0                | 1                |                |                | Can people hold votes to kick players from the server?
-sv_vote_issue_loadbackup_allowed                                 | 1                | 1                |                |                | Can people hold votes to load match from backup?
+sv_vote_issue_loadbackup_allowed                                 | 0                | 1                |                |                | Can people hold votes to load match from backup?
 sv_vote_issue_loadbackup_spec_authoritative                      | 0                | 0                |                |                | When enabled, admins load match from backup without players vote
 sv_vote_issue_loadbackup_spec_only                               | 0                | 0                |                |                | When enabled, only admins load match from backup
 sv_vote_issue_loadbackup_spec_safe                               | 1                | 1                |                |                | When enabled, admins load match from backup in safe time of the round only
@@ -2239,10 +2239,10 @@ sv_vote_issue_scramble_teams_allowed                             | 0            
 sv_vote_issue_surrrender_allowed                                 | 1                | 1                |                |                | Can people hold votes to surrender?
 sv_vote_issue_swap_teams_allowed                                 | 0                | 0                |                |                | Can people hold votes to swap the teams?
 sv_vote_issue_timeout_allowed                                    | 1                | 1                |                |                | Can people hold votes to time out?
-sv_vote_kick_ban_duration                                        | 0                | 15               |                |                | How long should a kick vote ban someone from the server? (in minutes)
-sv_vote_quorum_ratio                                             | 0.010000         | 0.501            | 0.010000       | 1.000000       | The minimum ratio of players needed to vote on an issue to resolve it.
-sv_vote_timer_duration                                           | 0                | 15               |                |                | How long to allow voting on an issue
-sv_vote_to_changelevel_before_match_point                        | 0                | 0                |                |                | Restricts vote to change level to rounds prior to match point (default 0, vote is never disallowed)
+sv_vote_kick_ban_duration                                        | 5                | 15               |                |                | How long should a kick vote ban someone from the server? (in minutes)
+sv_vote_quorum_ratio                                             | 0.501            | 0.501            | 0.010000       | 1.000000       | The minimum ratio of players needed to vote on an issue to resolve it.
+sv_vote_timer_duration                                           | 10               | 15               |                |                | How long to allow voting on an issue
+sv_vote_to_changelevel_before_match_point                        | 1                | 0                |                |                | Restricts vote to change level to rounds prior to match point (default 0, vote is never disallowed)
 sv_walkable_normal                                               | 0.7              | 0.7              |                |                | 
 sv_warmup_to_freezetime_delay                                    | 4                | 4                | 3.000000       | 20.000000      | Delay between end of warmup and start of match.
 sv_water_movespeed_multiplier                                    | 0.8              | 0.8              |                |                | 

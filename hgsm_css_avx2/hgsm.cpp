@@ -5496,152 +5496,43 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
             {
                 if (llTime - llStamp > 0)
                 {
-                    if (!((llTime + 15) % 3600))
+                    if (!((llTime + 5) % 3600))
                     {
-                        strCmd.assign("say");
+                        if (::numUsersPlaying() < 1)
                         {
-                            strCmd.append(" ");
+                            ::engine->ServerCommand("say Restarting The Map!\n");
                             {
-                                strCmd.append("CHANGING MAP TO");
-                                {
-                                    strCmd.append(" ");
-                                    {
-                                        strCmd.append(::gpGlobals->mapname.ToCStr());
-                                        {
-                                            strCmd.append(" ");
-                                            {
-                                                strCmd.append("IN 15 SECONDS");
-                                                {
-                                                    strCmd.append("\n");
-                                                    {
-                                                        strCmd.shrink_to_fit();
-                                                        {
-                                                            ::engine->ServerCommand(strCmd.c_str());
-                                                            {
-                                                                strCmd.clear();
-                                                                {
-                                                                    strCmd.shrink_to_fit();
-                                                                    {
-                                                                        llStamp = llTime;
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    else if (!((llTime + 10) % 3600))
-                    {
-                        strCmd.assign("say");
-                        {
-                            strCmd.append(" ");
-                            {
-                                strCmd.append("CHANGING MAP TO");
-                                {
-                                    strCmd.append(" ");
-                                    {
-                                        strCmd.append(::gpGlobals->mapname.ToCStr());
-                                        {
-                                            strCmd.append(" ");
-                                            {
-                                                strCmd.append("IN 10 SECONDS");
-                                                {
-                                                    strCmd.append("\n");
-                                                    {
-                                                        strCmd.shrink_to_fit();
-                                                        {
-                                                            ::engine->ServerCommand(strCmd.c_str());
-                                                            {
-                                                                strCmd.clear();
-                                                                {
-                                                                    strCmd.shrink_to_fit();
-                                                                    {
-                                                                        llStamp = llTime;
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    else if (!((llTime + 5) % 3600))
-                    {
-                        strCmd.assign("say");
-                        {
-                            strCmd.append(" ");
-                            {
-                                strCmd.append("CHANGING MAP TO");
-                                {
-                                    strCmd.append(" ");
-                                    {
-                                        strCmd.append(::gpGlobals->mapname.ToCStr());
-                                        {
-                                            strCmd.append(" ");
-                                            {
-                                                strCmd.append("IN 5 SECONDS");
-                                                {
-                                                    strCmd.append("\n");
-                                                    {
-                                                        strCmd.shrink_to_fit();
-                                                        {
-                                                            ::engine->ServerCommand(strCmd.c_str());
-                                                            {
-                                                                strCmd.clear();
-                                                                {
-                                                                    strCmd.shrink_to_fit();
-                                                                    {
-                                                                        llStamp = llTime;
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                llStamp = llTime;
                             }
                         }
                     }
 
                     else if (!(llTime % 3600))
                     {
-                        strCmd.assign("changelevel");
+                        if (::numUsersPlaying() < 1)
                         {
-                            strCmd.append(" ");
+                            strCmd.assign("changelevel");
                             {
-                                strCmd.append("\"");
+                                strCmd.append(" ");
                                 {
-                                    strCmd.append(::gpGlobals->mapname.ToCStr());
+                                    strCmd.append("\"");
                                     {
-                                        strCmd.append("\"");
+                                        strCmd.append(::gpGlobals->mapname.ToCStr());
                                         {
-                                            strCmd.append("\n");
+                                            strCmd.append("\"");
                                             {
-                                                strCmd.shrink_to_fit();
+                                                strCmd.append("\n");
                                                 {
-                                                    ::engine->ServerCommand(strCmd.c_str());
+                                                    strCmd.shrink_to_fit();
                                                     {
-                                                        strCmd.clear();
+                                                        ::engine->ServerCommand(strCmd.c_str());
                                                         {
-                                                            strCmd.shrink_to_fit();
+                                                            strCmd.clear();
                                                             {
-                                                                llStamp = llTime;
+                                                                strCmd.shrink_to_fit();
+                                                                {
+                                                                    llStamp = llTime;
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -7327,3 +7218,67 @@ void MultiMediaFeatureTryDetach() noexcept
 }
 
 #endif
+
+int numUsersPlaying() noexcept
+{
+    static int nPlayer{ }, nPlaying{ };
+
+    static ::edict_t* pEdict{ };
+    static ::CBaseEntity* pBaseEntity{ };
+    static ::IPlayerInfo* pPlayerInfo{ };
+    static ::IServerUnknown* pServerUnknown{ };
+    static ::IServerEntity* pServerEntity{ };
+
+    for (nPlaying = xTo(false, int), nPlayer = xTo(true, int); nPlayer <= ::gpGlobals->maxClients; nPlayer++)
+    {
+
+#if SOURCE_ENGINE != SE_CSGO
+
+        if (pEdict = ::engine->PEntityOfEntIndex(nPlayer))
+
+#else
+
+        if (pEdict = ::gpGlobals->pEdicts + nPlayer)
+
+#endif
+
+        {
+            if (!(pEdict->m_fStateFlags & FL_EDICT_FREE))
+            {
+                if (!(pEdict->m_fStateFlags & FL_EDICT_DONTSEND))
+                {
+                    if (pEdict->m_NetworkSerialNumber)
+                    {
+                        if (pEdict->m_pNetworkable)
+                        {
+                            if (pServerEntity = pEdict->GetIServerEntity())
+                            {
+                                if (pServerUnknown = pEdict->GetUnknown())
+                                {
+                                    if (pBaseEntity = pServerEntity->GetBaseEntity())
+                                    {
+                                        if (pPlayerInfo = ::playerinfomanager->GetPlayerInfo(pEdict))
+                                        {
+                                            if (pPlayerInfo->IsPlayer())
+                                            {
+                                                if (pPlayerInfo->IsConnected())
+                                                {
+                                                    if (pPlayerInfo->GetTeamIndex() > 1)
+                                                    {
+                                                        nPlaying++;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return nPlaying;
+}

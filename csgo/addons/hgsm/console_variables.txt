@@ -101,7 +101,7 @@ filesystem_use_overlapped_io                                     | 1            
 ai_navigator_generate_spikes                                     | 0                | 0                |                |                | 
 step_spline                                                      | 0                | 0                |                |                | 
 sv_max_distance_transmit_footsteps                               | 1250.0           | 1250.0           |                |                | Maximum distance to transmit footstep sound effects.
-mp_match_restart_delay                                           | 1.000000         | 25               | 1.000000       | 9999.000000    | Time (in seconds) until a match restarts.
+mp_match_restart_delay                                           | 20               | 25               | 1.000000       | 9999.000000    | Time (in seconds) until a match restarts.
 snd_sos_show_operator_updates                                    | 0                | 0                |                |                | 
 r_drawmodelstatsoverlaymin                                       | 0.1              | 0.1              |                |                | time in milliseconds that a model must take to render before showing an overlay in r_drawmodelstatsoverlay 2
 studio_queue_mode                                                | 1                | 1                |                |                | 
@@ -110,7 +110,7 @@ ai_simulate_task_overtime                                        | 0            
 ai_use_visibility_cache                                          | 1                | 1                |                |                | 
 mp_radar_showall                                                 | 1                | 0                | 0.000000       | 3.000000       | Determines who should see all. 0 = default. 1 = both teams. 2 = Terrorists. 3 = Counter-Terrorists.
 snd_sos_show_server_xmit                                         | 0                | 0                |                |                | 
-mp_backup_restore_load_autopause                                 | 1                | 1                |                |                | Whether to automatically pause the match after restoring round data from backup
+mp_backup_restore_load_autopause                                 | 0                | 1                |                |                | Whether to automatically pause the match after restoring round data from backup
 ammo_357sig_small_max                                            | 24               | 24               |                |                | 
 mp_playerid                                                      | 2                | 0                | 0.000000       | 2.000000       | Controls what information player see in the status bar: 0 all names; 1 team names; 2 no names
 score_team_damage_bonus                                          | 1                | 1                |                |                | Points awarded for each point of damage a nearby (in same zone) teammate does to enemies
@@ -250,7 +250,7 @@ r_overlayfadeenable                                              | 0            
 sv_stats                                                         | 1                | 1                |                |                | Collect CPU usage stats
 r_lightcache_radiusfactor                                        | 1000             | 1000             |                |                | Allow lights to influence lightcaches beyond the lights' radii
 ai_shot_bias_min                                                 | -1.0             | -1.0             |                |                | 
-sv_vote_allow_spectators                                         | 0                | 0                |                |                | Allow spectators to initiate votes?
+sv_vote_allow_spectators                                         | 1                | 0                |                |                | Allow spectators to initiate votes?
 sv_falldamage_to_below_player_multiplier                         | 1                | 1                |                |                | Scale damage when distributed across two players
 cv_bot_ai_bt_debug_target                                        | -1               | -1               |                |                | Draw the behavior tree of the given bot.
 sv_memlimit                                                      | 0                | 0                |                |                | If set, whenever a game ends, if the total memory used by the server is greater than this # of megabytes, the server will exit.
@@ -296,7 +296,7 @@ snd_vox_captiontrace                                             | 0            
 logaddress_token_secret                                          |                  |                  |                |                | Set a secret string that will be hashed when using logaddress with explicit token hash.
 ent_debugkeys                                                    |                  |                  |                |                | 
 mp_dm_teammode_kill_score                                        | 1                | 1                |                |                | Team deathmatch victory points to award for enemy kill
-mp_competitive_endofmatch_extra_time                             | 0                | 15               |                |                | After a competitive match finishes rematch voting extra time is given for rankings.
+mp_competitive_endofmatch_extra_time                             | 20               | 15               |                |                | After a competitive match finishes rematch voting extra time is given for rankings.
 bot_quota_mode                                                   | normal           | normal           |                |                | Determines the type of quota. Allowed values: 'normal', 'fill', and 'match'. If 'fill', the server will adjust bots to keep N players in the game, where N is bot_quota. If 'match', the server will maintain a 1:N ratio of humans to bots, where N is bot_quota.
 inferno_forward_reduction_factor                                 | 0.9              | 0.9              |                |                | 
 voice_threshold                                                  | 4000             | 4000             |                |                | 
@@ -370,7 +370,7 @@ sv_extra_client_connect_time                                     | 15.0         
 ai_vehicle_avoidance                                             | 1                | 1                |                |                | 
 mp_flashlight                                                    | 0                | 0                |                |                | 
 gamestats_file_output_directory                                  |                  |                  |                |                | When -gamestatsfileoutputonly is specified, file will be emitted here instead of to modpath 
-mp_maxrounds                                                     | 9999999          | 0                | 0.000000       |                | max number of rounds to play before server changes maps
+mp_maxrounds                                                     | 90               | 0                | 0.000000       |                | max number of rounds to play before server changes maps
 sv_endmatch_item_drop_interval                                   | 1.0              | 1.0              |                |                | The time between drops on the end match scoreboard 
 mp_guardian_player_dist_min                                      | 1300             | 1300             |                |                | The distance at which we start to warn a player when they are too far from the guarded bombsite.
 sv_vote_issue_surrrender_allowed                                 | 1                | 1                |                |                | Can people hold votes to surrender?
@@ -445,9 +445,9 @@ net_showudp_remoteonly                                           | 0            
 snd_gain_min                                                     | 0.01             | 0.01             |                |                | 
 sv_soundemitter_trace                                            | -1               | -1               |                |                | Show all EmitSound calls including their symbolic name and the actual wave file they resolved to. (-1 = for nobody, 0 = for everybody, n = for one entity) 
 sv_ggprogressive_autosniper_first                                | 1                | 1                |                |                | Should auto snipers go first or regular snipers?
-mp_team_timeout_time                                             | 60               | 60               |                |                | Duration of each timeout.
+mp_team_timeout_time                                             | 90               | 60               |                |                | Duration of each timeout.
 mp_round_restart_delay                                           | 4                | 7.0              | 0.000000       |                | Number of seconds to delay before restarting a round after a win
-mp_win_panel_display_time                                        | 0                | 3                |                |                | The amount of time to show the win panel between matches / halfs
+mp_win_panel_display_time                                        | 5                | 3                |                |                | The amount of time to show the win panel between matches / halfs
 dev_reportmoneychanges                                           | 0                | 0                |                |                | Displays money account changes for players in the console
 sv_weapon_require_use_grace_period                               | 1                | 1                |                |                | 
 snd_hrtf_voice_delay                                             | 0.1              | 0.1              |                |                | 
@@ -492,7 +492,7 @@ sv_alternateticks                                                | 0            
 skill                                                            | 1.000000         | 1                | 1.000000       | 3.000000       | Game skill level (1-3).
 res_restrict_access                                              | 0                | 0                |                |                | 
 spec_freeze_time_lock                                            | 1.0              | 1.0              |                |                | Time players are prevented from skipping the freeze cam
-mp_default_team_winner_no_objective                              | -1               | -1               |                |                | If the map doesn't define an objective (bomb, hostage, etc), the value of this convar will declare the winner when the time runs out in the round.
+mp_default_team_winner_no_objective                              | 2                | -1               |                |                | If the map doesn't define an objective (bomb, hostage, etc), the value of this convar will declare the winner when the time runs out in the round.
 mp_taser_recharge_time                                           | -1               | -1               |                |                | Determines recharge time for taser. -1 = disabled.
 mm_server_search_inet_ping_timeout                               | 3.0              | 3.0              |                |                | How long to wait for internet server details.
 snd_sos_show_operator_init                                       | 0                | 0                |                |                | 
@@ -715,8 +715,8 @@ sv_guardian_extra_equipment_t                                    |              
 sv_dz_respawn_additional_wait_time_solo                          | 15               | 15               |                |                | 
 r_modelwireframedecal                                            | 0                | 0                |                |                | 
 sv_debugtempentities                                             | 0                | 0                |                |                | Show temp entity bandwidth usage.
-mp_timelimit                                                     | 0                | 5                |                |                | game time per map in minutes
-sv_vote_quorum_ratio                                             | 0.010000         | 0.501            | 0.010000       | 1.000000       | The minimum ratio of players needed to vote on an issue to resolve it.
+mp_timelimit                                                     | 90               | 5                |                |                | game time per map in minutes
+sv_vote_quorum_ratio                                             | 0.501            | 0.501            | 0.010000       | 1.000000       | The minimum ratio of players needed to vote on an issue to resolve it.
 sv_jump_impulse                                                  | 301.993377       | 301.993377       | 0.000000       |                | Initial upward velocity for player jumps; sqrt(2*gravity*height).
 sv_skirmish_id                                                   | 0                | 0                |                |                | Dedicated server skirmish id to run
 mp_overtime_halftime_pausetimer                                  | 0                | 0                |                |                | If set to 1 will set mp_halftime_pausetimer to 1 before every half of overtime. Set mp_halftime_pausetimer to 0 to resume the timer.
@@ -725,7 +725,7 @@ dtwatchencode                                                    | 1            
 mat_morphstats                                                   | 0                | 0                |                |                | 
 hl2_episodic                                                     | 0                | 0                |                |                | 
 sv_reward_drop_delay                                             | 3.0              | 3.0              |                |                | Delay between the end match scoreboard being shown and the beginning of item drops.
-mp_warmuptime                                                    | 5.000000         | 30               | 5.000000       |                | How long the warmup period lasts. Changing this value resets warmup.
+mp_warmuptime                                                    | 30               | 30               | 5.000000       |                | How long the warmup period lasts. Changing this value resets warmup.
 sv_bot_difficulty_hydra                                          | 0                | 0                |                |                | Bot difficulty while playing with Hydra device
 score_hostage_proximity_damage_bonus                             | 1                | 1                |                |                | Points awarded for damaging enemy near live hostage
 score_blind_friendly_penalty                                     | 10               | 10               |                |                | Penalty for blinding friendly players
@@ -765,7 +765,7 @@ stripper_cfg_path                                                | addons/stripp
 tv_maxclients_relayreserved                                      | 0                | 0                | 0.000000       | 255.000000     | Reserves a certain number of GOTV client slots for relays.
 mat_draw_resolution_threshold                                    | 3072             | 3072             |                |                | 
 player_debug_print_damage                                        | 0                | 0                |                |                | When true, print amount and type of all damage received by player to console.
-mp_endmatch_votenextmap                                          | 0                | 1                |                |                | Whether or not players vote for the next map at the end of the match when the final scoreboard comes up
+mp_endmatch_votenextmap                                          | 1                | 1                |                |                | Whether or not players vote for the next map at the end of the match when the final scoreboard comes up
 mp_endmatch_votenextmap_wargames_modes                           | armsrace demolit | armsrace demolit |                |                | Modes available for endmatch voting during War Games. Separate names with spaces.
 sv_runcmds                                                       | 1                | 1                |                |                | 
 mat_leafvis_freeze                                               | 0                | 0                |                |                | If set to 1, uses the last known leaf visibility data for visualization. If set to 0, updates based on camera movement.
@@ -896,11 +896,11 @@ r_shadows                                                        | 1            
 debug_paint_alpha                                                | 0                | 0                |                |                | 
 ai_use_efficiency                                                | 1                | 1                |                |                | 
 mp_anyone_can_pickup_c4                                          | 0                | 0                |                |                | If set, everyone can pick up the c4, not just Ts.
-mp_verbose_changelevel_spew                                      | 1                | 1                |                |                | 
+mp_verbose_changelevel_spew                                      | 0                | 1                |                |                | 
 mp_warmup_pausetimer                                             | 0                | 0                |                |                | Set to 1 to stay in warmup indefinitely. Set to 0 to resume the timer.
 score_damage                                                     | 1                | 1                |                |                | Points awarded for each point of damage to an enemy
 score_blind_enemy_bonus                                          | 10               | 10               |                |                | Bonus for blinding enemy players
-sv_vote_to_changelevel_before_match_point                        | 0                | 0                |                |                | Restricts vote to change level to rounds prior to match point (default 0, vote is never disallowed)
+sv_vote_to_changelevel_before_match_point                        | 1                | 0                |                |                | Restricts vote to change level to rounds prior to match point (default 0, vote is never disallowed)
 bot_allow_rifles                                                 | 1                | 1                |                |                | If nonzero, bots may use rifles.
 mm_server_search_server_lifetime                                 | 180              | 180              |                |                | How long until a server is no longer returned by the master till we remove it.
 adsp_openwall_min                                                | 130              | 130              |                |                | 
@@ -914,10 +914,10 @@ r_minnewsamples                                                  | 3            
 rpt_vprof_time                                                   | 0.25             | 0.25             |                |                | 
 collision_shake_amp                                              | 0.2              | 0.2              |                |                | 
 sv_maxusrcmdprocessticks_holdaim                                 | 1                | 1                |                |                | Hold client aim for multiple server sim ticks when client-issued usrcmd contains multiple actions (0: off; 1: hold this server tick; 2+: hold multiple ticks)
-mp_halftime_duration                                             | 15.0             | 15.0             | 0.000000       | 300.000000     | Number of seconds that halftime lasts
+mp_halftime_duration                                             | 15               | 15.0             | 0.000000       | 300.000000     | Number of seconds that halftime lasts
 mp_dogtag_despawn_on_killer_death                                | 1                | 1                |                |                | Whether dogtags should despawn when their killer dies
 cash_player_killed_enemy_default                                 | 300              | 300              |                |                | 
-hgsm_version                                                     | Jan 31 2023      | Jan 31 2023      |                |                | Hattrick Game Server Manager Version
+hgsm_version                                                     | Feb 3 2023       | Feb 3 2023       |                |                | Hattrick Game Server Manager Version
 snd_obscured_gain_dB                                             | -2.70            | -2.70            |                |                | 
 phys_show_active                                                 | 0                | 0                |                |                | 
 mp_c4_cannot_be_defused                                          | 0                | 0                |                |                | If set, the planted c4 cannot be defused.
@@ -1050,7 +1050,7 @@ r_drawlights                                                     | 0            
 vgui_drawtree_panelalpha                                         | 0                | 0                |                |                | Show the panel alpha values in the vgui_drawtree view.
 mat_queue_mode_force_allow                                       | 0                | 0                |                |                | Whether QMS can be enabled on single threaded CPU
 sv_log_http_record_before_any_listeners                          |                  |                  |                |                | 
-mp_technical_timeout_duration_s                                  | 0                | 0                |                |                | How many seconds is a full technical timeout?
+mp_technical_timeout_duration_s                                  | 90               | 0                |                |                | How many seconds is a full technical timeout?
 mp_damage_headshot_only                                          | 0                | 0                |                |                | Determines whether non-headshot hits do any damage.
 mp_logdistance_sec                                               | 15               | 15               |                |                | Enables distance logging every so many seconds
 sv_penetration_type                                              | 1                | 1                |                |                | What type of penertration to use. 0 = old CS, 1 = new penetration
@@ -1125,7 +1125,7 @@ r_lightcache_numambientsamples                                   | 162          
 mat_tonemapping_occlusion_use_stencil                            | 0                | 0                |                |                | 
 ai_expression_optimization                                       | 0                | 0                |                |                | Disable npc background expressions when you can't see them.
 suitvolume                                                       | 0.25             | 0.25             |                |                | 
-sv_vote_disallow_kick_on_match_point                             | 0                | 0                |                |                | Disallow vote kicking on the match point round.
+sv_vote_disallow_kick_on_match_point                             | 1                | 0                |                |                | Disallow vote kicking on the match point round.
 mp_ggtr_bomb_pts_for_he                                          | 3                | 3                | 1.000000       | 5.000000       | Kill points required in a round to get a bonus HE grenade
 bot_show_occupy_time                                             | 0                | 0                |                |                | Show when each nav area can first be reached by each team.
 mod_touchalldata                                                 | 1                | 1                |                |                | Touch model data during level startup
@@ -1145,7 +1145,7 @@ voice_showchannels                                               | 0            
 mat_fullbright                                                   | 0                | 0                |                |                | 
 sv_pushaway_max_player_force                                     | 10000            | 10000            |                |                | Maximum of how hard the player is pushed away from physics objects.
 spec_freeze_time                                                 | 2                | 3.0              |                |                | Time spend frozen in observer freeze cam.
-sv_vote_command_delay                                            | 0                | 2                |                | 4.500000       | How long after a vote passes until the action happens
+sv_vote_command_delay                                            | 2.5              | 2                |                | 4.500000       | How long after a vote passes until the action happens
 mp_ggtr_bomb_pts_for_flash                                       | 4                | 4                | 1.000000       | 5.000000       | Kill points required in a round to get a bonus flash grenade
 hud_jeephint_numentries                                          | 10               | 10               |                |                | 
 voice_steal                                                      | 2                | 2                |                |                | 
@@ -1161,10 +1161,10 @@ anim_twistbones_enabled                                          | 0            
 spec_replay_enable                                               | 0                | 0                |                |                | Enable Killer Replay, requires hltv server running (0:off, 1:default, 2:force)
 mat_dynamiclightmaps                                             | 0                | 0                |                |                | 
 soundscape_debug                                                 | 0                | 0                |                |                | When on, draws lines to all env_soundscape entities. Green lines show the active soundscape, red lines show soundscapes that aren't in range, and white lines show soundscapes that are in range, but not the active soundscape.
-sv_vote_allow_in_warmup                                          | 0                | 0                |                |                | Allow voting during warmup?
+sv_vote_allow_in_warmup                                          | 1                | 0                |                |                | Allow voting during warmup?
 mp_teamname_1                                                    |                  |                  |                |                | A non-empty string overrides the first team's name.
 mp_teamname_2                                                    |                  |                  |                |                | A non-empty string overrides the second team's name.
-mp_match_end_changelevel                                         | 0                | 0                | 0.000000       | 1.000000       | At the end of the match, perform a changelevel even if next map is the same
+mp_match_end_changelevel                                         | 1                | 0                | 0.000000       | 1.000000       | At the end of the match, perform a changelevel even if next map is the same
 snd_sos_show_startqueue                                          | 0                | 0                |                |                | 
 r_frustumcullworld                                               | 1                | 1                |                |                | 
 r_unloadlightmaps                                                | 0                | 0                |                |                | 
@@ -1414,7 +1414,7 @@ r_drawclipbrushes                                                | 0            
 tv_maxclients                                                    | 128              | 128              | 0.000000       | 255.000000     | Maximum client number on GOTV server.
 warningcallstacks_length                                         | 5                | 5                |                |                | Length of automatic warning callstacks
 sv_noclipspeed                                                   | 5                | 5                |                |                | 
-sv_vote_timer_duration                                           | 0                | 15               |                |                | How long to allow voting on an issue
+sv_vote_timer_duration                                           | 10               | 15               |                |                | How long to allow voting on an issue
 mp_logdetail                                                     | 0                | 0                | 0.000000       | 3.000000       | Logs attacks. Values are: 0=off, 1=enemy, 2=teammate, 3=both)
 cash_team_hostage_interaction                                    | 500              | 500              |                |                | 
 weapon_max_before_cleanup                                        | 0                | 0                |                |                | If set to non-zero, will remove the oldest dropped weapon to maintain the specified number of dropped weapons in the world.
@@ -1529,7 +1529,7 @@ ai_shot_bias                                                     | 1.0          
 ai_moveprobe_usetracelist                                        | 0                | 0                |                |                | 
 sv_air_max_horizontal_parachute_speed                            | 240              | 240              |                |                | 
 mp_showroundtransitions                                          | 0                | 0                |                |                | Show gamestate round transitions.
-mp_endmatch_votenextleveltime                                    | 0                | 20               |                |                | If mp_endmatch_votenextmap is set, players have this much time to vote on the next map at match end.
+mp_endmatch_votenextleveltime                                    | 10               | 20               |                |                | If mp_endmatch_votenextmap is set, players have this much time to vote on the next map at match end.
 score_hostage_rescue_radius_inner                                | 120              | 120              |                |                | Inner radius (full bonus) for rescuing hostage
 bot_ignore_enemies                                               | 0                | 0                |                |                | If nonzero, bots will ignore enemies (for debugging).
 nav_show_approach_points                                         | 0                | 0                |                |                | Show Approach Points in the Navigation Mesh.
@@ -1659,7 +1659,7 @@ showbudget_texture_global_sum                                    | 0.0f         
 ai_shot_bias_max                                                 | 1.0              | 1.0              |                |                | 
 xbox_throttlebias                                                | 100              | 100              |                |                | 
 func_breakdmg_explosive                                          | 1.25             | 1.25             |                |                | 
-mp_playerid_hold                                                 | 0.1              | 0.1              | 0.000000       | 1.000000       | Number of seconds to keep showing old information in the status bar
+mp_playerid_hold                                                 | 0                | 0.1              | 0.000000       | 1.000000       | Number of seconds to keep showing old information in the status bar
 mp_t_default_primary                                             |                  |                  |                |                | The default primary (rifle) weapon that the Ts will spawn with
 mp_dogtag_pickup_rule                                            | 0                | 0                |                |                | Who is eligible to pick up a dogtag (0 = killer only, 1 = killer's team, 2 = victim's team, 3 = killer & victim's team, 4 = anyone)
 score_bomb_plant_radius_inner                                    | 120              | 120              |                |                | Inner radius (full bonus) for planting or assisting with planting the bomb
@@ -1766,7 +1766,7 @@ tv_relaypassword                                                 |              
 mp_teamlogo_1                                                    |                  |                  |                |                | Enter a team's shorthand image name to display their logo. Images can be found here: 'resource/flash/econ/tournaments/teams'
 mp_teamlogo_2                                                    |                  |                  |                |                | Enter a team's shorthand image name to display their logo. Images can be found here: 'resource/flash/econ/tournaments/teams'
 ammo_357sig_max                                                  | 52               | 52               |                |                | 
-mp_do_warmup_period                                              | 0                | 1                | 0.000000       | 1.000000       | Whether or not to do a warmup period at the start of a match.
+mp_do_warmup_period                                              | 1                | 1                | 0.000000       | 1.000000       | Whether or not to do a warmup period at the start of a match.
 tr_valve_course_time                                             | 352              | 352              |                |                | Valve's best time for the timed obstacle course
 weapon_recoil_vel_decay                                          | 4.5              | 4.5              |                |                | Decay factor for weapon recoil velocity
 demo_index                                                       | 0                | 0                |                |                | If to use demo index. Needs to be set before loading demo.
@@ -1939,8 +1939,8 @@ vprof_dump_spikes_budget_group                                   |              
 dev_break_after_count                                            | 0                | 0                |                |                | 
 sv_ct_spawn_on_bombsite                                          | -1               | -1               |                |                | Force cts to spawn on a bombsite
 ammo_338mag_impulse                                              | 2800             | 2800             |                |                | You must enable tweaking via tweak_ammo_impulses to use this value.
-mp_do_warmup_offine                                              | 0                | 0                | 0.000000       | 1.000000       | Whether or not to do a warmup period at the start of a match in an offline (bot) match.
-sv_vote_kick_ban_duration                                        | 0                | 15               |                |                | How long should a kick vote ban someone from the server? (in minutes)
+mp_do_warmup_offine                                              | 1                | 0                | 0.000000       | 1.000000       | Whether or not to do a warmup period at the start of a match in an offline (bot) match.
+sv_vote_kick_ban_duration                                        | 5                | 15               |                |                | How long should a kick vote ban someone from the server? (in minutes)
 mp_retake_ct_loadout_upgraded_pistol_round                       | 2|2;#GameUI_Reta | 2|2;#GameUI_Reta |                |                | CT Loadouts for upgraded pistol round when playing bomb site retake.
 mm_datacenter_delay_mount_frames                                 | 6                | 6                |                |                | How many frames to delay before attempting to mount the xlsp patch.
 snd_profile                                                      | 0                | 0                |                |                | 
@@ -2064,7 +2064,7 @@ sv_netvisdist                                                    | 10000        
 mp_allowspectators                                               | 1.0              | 1.0              |                |                | toggles whether the server allows spectator mode or not
 sv_autobunnyhopping                                              | 0                | 0                |                |                | Players automatically re-jump while holding jump button
 sv_show_bot_difficulty_in_name                                   | 0                | 0                |                |                | 0 = hide bot difficulty in bot name, 1 = show bot difficulty in bot name
-sv_vote_issue_loadbackup_allowed                                 | 1                | 1                |                |                | Can people hold votes to load match from backup?
+sv_vote_issue_loadbackup_allowed                                 | 0                | 1                |                |                | Can people hold votes to load match from backup?
 weapon_debug_max_inaccuracy                                      | 0                | 0                |                |                | Force all shots to have maximum inaccuracy
 choreo_spew_filter                                               |                  |                  |                |                | Spew choreo. Use a sub-string or * to display all events.
 snd_mapobjective_volume                                          | 1.0              | 1.0              |                |                | Relative volume of map objective music.
@@ -2127,7 +2127,7 @@ pipeline_static_props                                            | 1            
 morph_path                                                       | 7                | 7                |                |                | 
 r_buildingmapforworld                                            | 0                | 0                |                |                | 
 mat_lightmap_pfms                                                | 0                | 0                |                |                | Outputs .pfm files containing lightmap data for each lightmap page when a level exits.
-mp_fraglimit                                                     | 0                | 0                |                |                | The number of kills at which the map ends
+mp_fraglimit                                                     | 5000             | 0                |                |                | The number of kills at which the map ends
 mp_t_default_secondary                                           | weapon_deagle    | weapon_glock     |                |                | The default secondary (pistol) weapon that the Ts will spawn with
 sv_bot_buy_smoke_weight                                          | 1                | 1                | 0.000000       |                | Given a bot will buy a grenade, controls the odds of the grenade type. Proportional to all other sv_bot_buy_*_weight convars.
 snd_sos_allow_dynamic_chantype                                   | 1                | 1                |                |                | 
@@ -2151,7 +2151,7 @@ sv_mmqueue_reservation_timeout                                   | 21           
 motdfile                                                         | motd.txt         | motd.txt         |                |                | The MOTD file to load.
 mp_disconnect_kills_bots                                         | 1                | 0                |                |                | When a bot disconnects, kill them first. Requires mp_disconnect_kills_players.
 cash_team_bonus_shorthanded                                      | 0                | 0                |                |                | 
-sv_showimpacts_time                                              | 4                | 4                | 0.000000       | 10.000000      | Duration bullet impact indicators remain before disappearing
+sv_showimpacts_time                                              | 0                | 4                | 0.000000       | 10.000000      | Duration bullet impact indicators remain before disappearing
 bot_loadout                                                      |                  |                  |                |                | bots are given these items at round start
 sv_shield_explosive_damage_mult                                  | 4                | 4                |                |                | 
 sv_shield_hitpoints                                              | 850              | 850              |                |                | 
@@ -2227,8 +2227,8 @@ mat_detail_tex                                                   | 1            
 ai_default_efficient                                             | 0                | 0                |                |                | 
 spec_freeze_target_fov                                           | 42               | 42               |                |                | The target FOV that the deathcam should use.
 r_JeepFOV                                                        | 90               | 90               |                |                | 
-sv_vote_creation_timer                                           | 0                | 120              |                |                | How often someone can individually call a vote.
-sv_vote_count_spectator_votes                                    | 0                | 0                |                |                | Allow spectators to vote on issues?
+sv_vote_creation_timer                                           | 60               | 120              |                |                | How often someone can individually call a vote.
+sv_vote_count_spectator_votes                                    | 1                | 0                |                |                | Allow spectators to vote on issues?
 sv_outofammo_indicator                                           | 0                | 0                |                |                | 
 mp_display_kill_assists                                          | 1                | 1                | 0.000000       | 1.000000       | Whether to display and score player assists
 score_bomb_defuse_radius_outer                                   | 600              | 600              |                |                | Outer radius (zero bonus) for defusing or assisting with defseing the bomb
@@ -2287,7 +2287,7 @@ r_staticlight_streams_indirect_only                              | -            
 net_showevents                                                   | 0                | 0                |                |                | Dump game events to console (1=client only, 2=all).
 host_showcachemiss                                               | 0                | 0                |                |                | Print a debug message when the client or server cache is missed.
 sv_gravity                                                       | 800              | 800              |                |                | World gravity.
-sv_vote_failure_timer                                            | 0                | 300              |                |                | A vote that fails cannot be re-submitted for this long
+sv_vote_failure_timer                                            | 180              | 300              |                |                | A vote that fails cannot be re-submitted for this long
 sv_dz_autojointeam                                               | 1                | 1                |                |                | Whether players are automatically assigned a DZ team
 mat_max_worldmesh_vertices                                       | 65536            | 65536            |                |                | 
 spec_replay_message_time                                         | 9.5              | 9.5              |                |                | How long to show the message about Killer Replay after death. The best setting is a bit shorter than spec_replay_autostart_delay + spec_replay_leadup_time + spec_replay_winddown_time

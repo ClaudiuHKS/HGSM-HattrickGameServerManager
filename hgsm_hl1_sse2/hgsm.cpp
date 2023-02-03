@@ -4609,6 +4609,141 @@ void Hook_StartFrame_Post() noexcept
                                                             }
                                                         }
 
+                                                        else if ((nTeam == ((int)('o'))) || (nTeam == ((int)('O'))))
+                                                        {
+                                                            if (!::g_bShow[nEntity])
+                                                            {
+                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                {
+                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_1.c_str());
+                                                                }
+                                                                (*::g_engfuncs.pfnMessageEnd) ();
+
+                                                                if (!::g_strWelcome_2.empty())
+                                                                {
+                                                                    if (::g_strWelcome_2.length() <= 190)
+                                                                    {
+                                                                        if (::g_strWelcome_2.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_2.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (!::g_strWelcome_3.empty())
+                                                                {
+                                                                    if (::g_strWelcome_3.length() <= 190)
+                                                                    {
+                                                                        if (::g_strWelcome_3.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_3.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (!::g_strWelcome_4.empty())
+                                                                {
+                                                                    if (::g_strWelcome_4.length() <= 190)
+                                                                    {
+                                                                        if (::g_strWelcome_4.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_4.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (!::g_strWelcome_5.empty())
+                                                                {
+                                                                    if (::g_strWelcome_5.length() <= 190)
+                                                                    {
+                                                                        if (::g_strWelcome_5.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_5.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (!::g_strWelcome_6.empty())
+                                                                {
+                                                                    if (::g_strWelcome_6.length() <= 190)
+                                                                    {
+                                                                        if (::g_strWelcome_6.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_6.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (!::g_strNotify_1.empty())
+                                                                {
+                                                                    if (::g_strNotify_1.length() <= 190)
+                                                                    {
+                                                                        if (::g_strNotify_1.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTTALK);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strNotify_1.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (!::g_strNotify_2.empty())
+                                                                {
+                                                                    if (::g_strNotify_2.length() <= 190)
+                                                                    {
+                                                                        if (::g_strNotify_2.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTTALK);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strNotify_2.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                ::g_bShow[nEntity] = true;
+                                                            }
+                                                        }
+
                                                         else if (!nTeam)
                                                         {
 
@@ -5835,152 +5970,43 @@ void Hook_StartFrame_Post() noexcept
             {
                 if (llTime - llStamp > 0)
                 {
-                    if (!((llTime + 15) % 3600))
+                    if (!((llTime + 5) % 3600))
                     {
-                        strCmd.assign("say");
+                        if (::numUsersPlaying() < 1)
                         {
-                            strCmd.append(" ");
+                            (*::g_engfuncs.pfnServerCommand) ("say Restarting The Map!\n");
                             {
-                                strCmd.append("CHANGING MAP TO");
-                                {
-                                    strCmd.append(" ");
-                                    {
-                                        strCmd.append(STRING(::gpGlobals->mapname));
-                                        {
-                                            strCmd.append(" ");
-                                            {
-                                                strCmd.append("IN 15 SECONDS");
-                                                {
-                                                    strCmd.append("\n");
-                                                    {
-                                                        strCmd.shrink_to_fit();
-                                                        {
-                                                            (*::g_engfuncs.pfnServerCommand) (strCmd.c_str());
-                                                            {
-                                                                strCmd.clear();
-                                                                {
-                                                                    strCmd.shrink_to_fit();
-                                                                    {
-                                                                        llStamp = llTime;
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    else if (!((llTime + 10) % 3600))
-                    {
-                        strCmd.assign("say");
-                        {
-                            strCmd.append(" ");
-                            {
-                                strCmd.append("CHANGING MAP TO");
-                                {
-                                    strCmd.append(" ");
-                                    {
-                                        strCmd.append(STRING(::gpGlobals->mapname));
-                                        {
-                                            strCmd.append(" ");
-                                            {
-                                                strCmd.append("IN 10 SECONDS");
-                                                {
-                                                    strCmd.append("\n");
-                                                    {
-                                                        strCmd.shrink_to_fit();
-                                                        {
-                                                            (*::g_engfuncs.pfnServerCommand) (strCmd.c_str());
-                                                            {
-                                                                strCmd.clear();
-                                                                {
-                                                                    strCmd.shrink_to_fit();
-                                                                    {
-                                                                        llStamp = llTime;
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    else if (!((llTime + 5) % 3600))
-                    {
-                        strCmd.assign("say");
-                        {
-                            strCmd.append(" ");
-                            {
-                                strCmd.append("CHANGING MAP TO");
-                                {
-                                    strCmd.append(" ");
-                                    {
-                                        strCmd.append(STRING(::gpGlobals->mapname));
-                                        {
-                                            strCmd.append(" ");
-                                            {
-                                                strCmd.append("IN 5 SECONDS");
-                                                {
-                                                    strCmd.append("\n");
-                                                    {
-                                                        strCmd.shrink_to_fit();
-                                                        {
-                                                            (*::g_engfuncs.pfnServerCommand) (strCmd.c_str());
-                                                            {
-                                                                strCmd.clear();
-                                                                {
-                                                                    strCmd.shrink_to_fit();
-                                                                    {
-                                                                        llStamp = llTime;
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
+                                llStamp = llTime;
                             }
                         }
                     }
 
                     else if (!(llTime % 3600))
                     {
-                        strCmd.assign("changelevel");
+                        if (::numUsersPlaying() < 1)
                         {
-                            strCmd.append(" ");
+                            strCmd.assign("changelevel");
                             {
-                                strCmd.append("\"");
+                                strCmd.append(" ");
                                 {
-                                    strCmd.append(STRING(::gpGlobals->mapname));
+                                    strCmd.append("\"");
                                     {
-                                        strCmd.append("\"");
+                                        strCmd.append(STRING(::gpGlobals->mapname));
                                         {
-                                            strCmd.append("\n");
+                                            strCmd.append("\"");
                                             {
-                                                strCmd.shrink_to_fit();
+                                                strCmd.append("\n");
                                                 {
-                                                    (*::g_engfuncs.pfnServerCommand) (strCmd.c_str());
+                                                    strCmd.shrink_to_fit();
                                                     {
-                                                        strCmd.clear();
+                                                        (*::g_engfuncs.pfnServerCommand) (strCmd.c_str());
                                                         {
-                                                            strCmd.shrink_to_fit();
+                                                            strCmd.clear();
                                                             {
-                                                                llStamp = llTime;
+                                                                strCmd.shrink_to_fit();
+                                                                {
+                                                                    llStamp = llTime;
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -7334,6 +7360,141 @@ void Hook_MessageEnd_Post() noexcept
                                                                             }
                                                                         }
 
+                                                                        else if ((nTeam == ((int)('o'))) || (nTeam == ((int)('O'))))
+                                                                        {
+                                                                            if (!::g_bShow[::g_nResetHudId])
+                                                                            {
+                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                {
+                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_1.c_str());
+                                                                                }
+                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+
+                                                                                if (!::g_strWelcome_2.empty())
+                                                                                {
+                                                                                    if (::g_strWelcome_2.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strWelcome_2.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_2.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                if (!::g_strWelcome_3.empty())
+                                                                                {
+                                                                                    if (::g_strWelcome_3.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strWelcome_3.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_3.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                if (!::g_strWelcome_4.empty())
+                                                                                {
+                                                                                    if (::g_strWelcome_4.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strWelcome_4.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_4.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                if (!::g_strWelcome_5.empty())
+                                                                                {
+                                                                                    if (::g_strWelcome_5.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strWelcome_5.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_5.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                if (!::g_strWelcome_6.empty())
+                                                                                {
+                                                                                    if (::g_strWelcome_6.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strWelcome_6.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_6.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                if (!::g_strNotify_1.empty())
+                                                                                {
+                                                                                    if (::g_strNotify_1.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strNotify_1.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTTALK);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strNotify_1.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                if (!::g_strNotify_2.empty())
+                                                                                {
+                                                                                    if (::g_strNotify_2.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strNotify_2.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTTALK);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strNotify_2.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                ::g_bShow[::g_nResetHudId] = true;
+                                                                            }
+                                                                        }
+
                                                                         else if (!nTeam)
                                                                         {
 
@@ -8456,6 +8617,141 @@ void Hook_MessageEnd_Post() noexcept
                                                                             }
 
                                                                             else if ((nTeam == ((int)('s'))) || (nTeam == ((int)('S'))))
+                                                                            {
+                                                                                if (!::g_bShow[::g_nResetHudId])
+                                                                                {
+                                                                                    (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                    {
+                                                                                        (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                        (*::g_engfuncs.pfnWriteString) (::g_strWelcome_1.c_str());
+                                                                                    }
+                                                                                    (*::g_engfuncs.pfnMessageEnd) ();
+
+                                                                                    if (!::g_strWelcome_2.empty())
+                                                                                    {
+                                                                                        if (::g_strWelcome_2.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strWelcome_2.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_2.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    if (!::g_strWelcome_3.empty())
+                                                                                    {
+                                                                                        if (::g_strWelcome_3.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strWelcome_3.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_3.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    if (!::g_strWelcome_4.empty())
+                                                                                    {
+                                                                                        if (::g_strWelcome_4.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strWelcome_4.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_4.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    if (!::g_strWelcome_5.empty())
+                                                                                    {
+                                                                                        if (::g_strWelcome_5.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strWelcome_5.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_5.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    if (!::g_strWelcome_6.empty())
+                                                                                    {
+                                                                                        if (::g_strWelcome_6.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strWelcome_6.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_6.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    if (!::g_strNotify_1.empty())
+                                                                                    {
+                                                                                        if (::g_strNotify_1.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strNotify_1.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTTALK);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strNotify_1.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    if (!::g_strNotify_2.empty())
+                                                                                    {
+                                                                                        if (::g_strNotify_2.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strNotify_2.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTTALK);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strNotify_2.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    ::g_bShow[::g_nResetHudId] = true;
+                                                                                }
+                                                                            }
+
+                                                                            else if ((nTeam == ((int)('o'))) || (nTeam == ((int)('O'))))
                                                                             {
                                                                                 if (!::g_bShow[::g_nResetHudId])
                                                                                 {
@@ -10442,3 +10738,59 @@ void MultiMediaFeatureTryDetach() noexcept
 }
 
 #endif
+
+int numUsersPlaying() noexcept
+{
+    static int nEntity{ }, nPlaying{ }, nTeam{ };
+
+    static ::edict_t* pEntity{ };
+
+    for (nPlaying = xTo(false, int), nEntity = xTo(true, int); nEntity <= ::gpGlobals->maxClients; nEntity++)
+    {
+        if (pEntity = ::INDEXENT(nEntity))
+        {
+            if (!pEntity->free)
+            {
+                if (pEntity->pvPrivateData)
+                {
+                    if (!pEntity->serialnumber)
+                    {
+                        if (!(pEntity->v.flags & FL_DORMANT))
+                        {
+                            if (pEntity->v.flags & FL_CLIENT)
+                            {
+                                if (!::g_strGameDir.compare("dod"))
+                                {
+                                    if (((nTeam = *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs)) == ((int)('a'))) || (nTeam == ((int)('A'))))
+                                    {
+                                        nPlaying++;
+                                    }
+
+                                    else if ((nTeam == ((int)('b'))) || (nTeam == ((int)('B'))))
+                                    {
+                                        nPlaying++;
+                                    }
+                                }
+
+                                else
+                                {
+                                    if ((nTeam = *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs)) == 1)
+                                    {
+                                        nPlaying++;
+                                    }
+
+                                    else if (nTeam == 2)
+                                    {
+                                        nPlaying++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return nPlaying;
+}
