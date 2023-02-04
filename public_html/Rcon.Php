@@ -30,11 +30,11 @@
         "hattrick.go.ro",
         "hattrick.go.ro",
 
-        "192.168.26.1",
-        "192.168.26.1",
-        "192.168.26.1",
-        "192.168.26.1",
-        "192.168.26.1",
+        "hattrick.go.ro",
+        "hattrick.go.ro",
+        "hattrick.go.ro",
+        "hattrick.go.ro",
+        "hattrick.go.ro",
     );
 
     $Prt = Array
