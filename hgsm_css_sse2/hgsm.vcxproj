@@ -91,6 +91,7 @@
       <UseFullPaths>false</UseFullPaths>
       <ErrorReporting>None</ErrorReporting>
       <AdditionalIncludeDirectories>$(DET)\src;$(JSON)\single_include;$(MMS)\core;$(MMS)\core\sourcehook;$(CSS)\public;$(CSS)\public\toolframework;$(CSS)\public\engine;$(CSS)\public\game\server;$(CSS)\public\game\shared\csgo\protobuf;$(CSS)\public\tier0;$(CSS)\public\tier1;$(CSS)\public\mathlib;$(CSS)\public\vstdlib;$(CSS)\game\server;$(CSS)\game\shared;$(CSS)\common\protobuf-2.5.0\src;$(CSS)\public\engine\protobuf;$(MYSQL)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <BuildStlModules>false</BuildStlModules>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

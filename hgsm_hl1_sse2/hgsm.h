@@ -115,6 +115,7 @@ extern bool g_bHideTimer;
 extern bool g_bHideFlash;
 
 extern bool g_bRealScoreFriendly;
+extern bool g_bFriendlyDecrease;
 extern bool g_bRealScore;
 extern bool g_bZeroMoney;
 extern bool g_bFixScore;
@@ -125,6 +126,8 @@ extern bool g_bHourlyRestart;
 
 extern bool g_bOneReliable;
 extern bool g_bAllReliable;
+
+extern bool g_bMsgsRcvd;
 
 extern int g_nDeaths[48];
 extern int g_nKills[48];
@@ -162,6 +165,8 @@ extern int m_iMoney;
 extern int m_iFov;
 extern int m_iDeaths;
 
+extern long long g_llMapChange;
+
 #ifdef WIN32
 
 extern unsigned long g_ulProc;
@@ -185,15 +190,21 @@ C_DLLEXPORT int Meta_Detach(::PLUG_LOADTIME, ::PL_UNLOAD_REASON);
 
 int Hook_Spawn(::edict_t*) noexcept;
 void Hook_ServerActivate(::edict_t*, int, int) noexcept;
+void Hook_ServerDeactivate() noexcept;
 void Hook_KeyValue(::edict_t*, ::KeyValueData*) noexcept;
+int Hook_ClientConnect(::edict_t*, const char*, const char*, char*) noexcept;
 void Hook_ClientDisconnect(::edict_t*) noexcept;
 
 void Hook_ServerDeactivate_Post() noexcept;
 void Hook_ServerActivate_Post(::edict_t*, int, int) noexcept;
 void Hook_StartFrame_Post() noexcept;
+int Hook_ClientConnect_Post(::edict_t*, const char*, const char*, char*) noexcept;
 void Hook_ClientPutInServer_Post(::edict_t*) noexcept;
 void Hook_ClientDisconnect_Post(::edict_t*) noexcept;
 
+int Hook_RegUserMsg(const char*, int) noexcept;
+
+int Hook_RegUserMsg_Post(const char*, int) noexcept;
 void Hook_MessageBegin_Post(int, int, const float*, ::edict_t*) noexcept;
 
 #ifdef WIN32
@@ -261,4 +272,5 @@ void MultiMediaFeatureTryDetach() noexcept;
 
 #endif
 
-int numUsersPlaying() noexcept;
+int numUsersPlaying(int = -1) noexcept;
+int numUsersConnected(int = -1) noexcept;

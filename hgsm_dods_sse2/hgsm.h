@@ -108,13 +108,19 @@ public:
 public:
 
     float Hook_GetTickInterval() const noexcept;
+    bool Hook_LevelInit(const char*, const char*, const char*, const char*, bool, bool) noexcept;
+    void Hook_LevelShutdown() noexcept;
 
+    bool Hook_ClientConnect(::edict_t*, const char*, const char*, char*, int) noexcept;
     void Hook_ClientDisconnect(::edict_t*) noexcept;
 
     void Hook_ServerActivate_Post(::edict_t*, int, int) noexcept;
+    bool Hook_LevelInit_Post(const char*, const char*, const char*, const char*, bool, bool) noexcept;
+    void Hook_LevelShutdown_Post() noexcept;
     void Hook_GameFrame_Post(bool) noexcept;
     float Hook_GetTickInterval_Post() const noexcept;
 
+    bool Hook_ClientConnect_Post(::edict_t*, const char*, const char*, char*, int) noexcept;
     void Hook_ClientPutInServer_Post(::edict_t*, const char*) noexcept;
     void Hook_ClientDisconnect_Post(::edict_t*) noexcept;
 
@@ -403,6 +409,7 @@ extern bool g_bNoReturn;
 extern bool g_bRealScore;
 extern bool g_bHideRadar;
 extern bool g_bRealScoreFriendly;
+extern bool g_bFriendlyDecrease;
 extern bool g_bFixKills;
 extern bool g_bFixDeaths;
 extern bool g_bZeroMoney;
@@ -436,6 +443,8 @@ extern int m_flFlashDuration;
 
 extern int x_nDataMap;
 extern int x_nSendProp;
+
+extern long long g_llMapChange;
 
 #ifdef WIN32
 
@@ -526,4 +535,5 @@ void MultiMediaFeatureTryDetach() noexcept;
 
 #endif
 
-int numUsersPlaying() noexcept;
+int numUsersPlaying(int = -1) noexcept;
+int numUsersConnected(int = -1) noexcept;

@@ -85,6 +85,7 @@ bool g_bHideTimer{ };
 bool g_bHideFlash{ };
 
 bool g_bRealScoreFriendly{ };
+bool g_bFriendlyDecrease{ };
 bool g_bRealScore{ };
 bool g_bZeroMoney{ };
 bool g_bFixScore{ };
@@ -95,6 +96,8 @@ bool g_bHourlyRestart{ };
 
 bool g_bOneReliable{ };
 bool g_bAllReliable{ };
+
+bool g_bMsgsRcvd{ };
 
 int g_nDeaths[48]{ };
 int g_nKills[48]{ };
@@ -131,6 +134,8 @@ int m_iTeam{ 114, };
 int m_iMoney{ 115, };
 int m_iFov{ 363, };
 int m_iDeaths{ 444, };
+
+long long g_llMapChange{ };
 
 #ifdef WIN32
 
@@ -190,10 +195,16 @@ C_DLLEXPORT int GetEntityAPI2(::DLL_FUNCTIONS* pFunctionTable, int*)
                         ::gFunctionTable.pfnSpawn = ::Hook_Spawn;
                         {
                             ::gFunctionTable.pfnServerActivate = ::Hook_ServerActivate;
+                            {
+                                ::gFunctionTable.pfnServerDeactivate = ::Hook_ServerDeactivate;
+                            }
                         }
                     }
 
-                    ::gFunctionTable.pfnClientDisconnect = ::Hook_ClientDisconnect;
+                    ::gFunctionTable.pfnClientConnect = ::Hook_ClientConnect;
+                    {
+                        ::gFunctionTable.pfnClientDisconnect = ::Hook_ClientDisconnect;
+                    }
                 }
                 ::std::memcpy(pFunctionTable, &::gFunctionTable, sizeof(::DLL_FUNCTIONS));
 
@@ -235,9 +246,12 @@ C_DLLEXPORT int GetEntityAPI2_Post(::DLL_FUNCTIONS* pFunctionTable, int*)
 
                     ::gFunctionTable_Post.pfnStartFrame = ::Hook_StartFrame_Post;
 
-                    ::gFunctionTable_Post.pfnClientPutInServer = ::Hook_ClientPutInServer_Post;
+                    ::gFunctionTable_Post.pfnClientConnect = ::Hook_ClientConnect_Post;
                     {
-                        ::gFunctionTable_Post.pfnClientDisconnect = ::Hook_ClientDisconnect_Post;
+                        ::gFunctionTable_Post.pfnClientPutInServer = ::Hook_ClientPutInServer_Post;
+                        {
+                            ::gFunctionTable_Post.pfnClientDisconnect = ::Hook_ClientDisconnect_Post;
+                        }
                     }
                 }
                 ::std::memcpy(pFunctionTable, &::gFunctionTable_Post, sizeof(::DLL_FUNCTIONS));
@@ -273,7 +287,7 @@ C_DLLEXPORT int GetEngineFunctions(::enginefuncs_t* pengfuncsFromEngine, int*)
             {
                 ::std::memset(&::gEngFuncTable, { }, sizeof(::enginefuncs_t));
                 {
-
+                    ::gEngFuncTable.pfnRegUserMsg = ::Hook_RegUserMsg;
                 }
                 ::std::memcpy(pengfuncsFromEngine, &::gEngFuncTable, sizeof(::enginefuncs_t));
 
@@ -308,11 +322,14 @@ C_DLLEXPORT int GetEngineFunctions_Post(::enginefuncs_t* pengfuncsFromEngine, in
             {
                 ::std::memset(&::gEngFuncTable_Post, { }, sizeof(::enginefuncs_t));
                 {
-                    ::gEngFuncTable_Post.pfnMessageBegin = ::Hook_MessageBegin_Post;
+                    ::gEngFuncTable_Post.pfnRegUserMsg = ::Hook_RegUserMsg_Post;
                     {
-                        ::gEngFuncTable_Post.pfnWriteByte = ::Hook_WriteByte_Post;
+                        ::gEngFuncTable_Post.pfnMessageBegin = ::Hook_MessageBegin_Post;
+                        {
+                            ::gEngFuncTable_Post.pfnWriteByte = ::Hook_WriteByte_Post;
+                        }
+                        ::gEngFuncTable_Post.pfnMessageEnd = ::Hook_MessageEnd_Post;
                     }
-                    ::gEngFuncTable_Post.pfnMessageEnd = ::Hook_MessageEnd_Post;
                 }
                 ::std::memcpy(pengfuncsFromEngine, &::gEngFuncTable_Post, sizeof(::enginefuncs_t));
 
@@ -921,29 +938,38 @@ C_DLLEXPORT int Meta_Attach(::PLUG_LOADTIME plugLoadTime, ::META_FUNCTIONS* pFun
             {
                 ::g_bLateLoaded = true;
                 {
-                    ::g_bNoReturn = true;
-
+                    if (!::g_bNoReturn)
                     {
-                        ::Hook_ServerActivate(nullptr, { }, { });
-                        {
-                            ::Hook_ServerActivate_Post(nullptr, { }, { });
-                        }
+                        ::g_bNoReturn = true;
 
-                        for (nEntity = xTo(true, int); nEntity <= ::gpGlobals->maxClients; nEntity++)
                         {
-                            if (pEntity = ::INDEXENT(nEntity))
+                            ::Hook_ServerActivate(nullptr, { }, { });
                             {
-                                if (!pEntity->free)
+                                ::Hook_ServerActivate_Post(nullptr, { }, { });
+                            }
+
+                            for (nEntity = xTo(true, int); nEntity <= ::gpGlobals->maxClients; nEntity++)
+                            {
+                                if (pEntity = ::INDEXENT(nEntity))
                                 {
-                                    if (pEntity->pvPrivateData)
+                                    if (!pEntity->free)
                                     {
-                                        if (!pEntity->serialnumber)
+                                        if (pEntity->pvPrivateData)
                                         {
-                                            if (!(pEntity->v.flags & FL_DORMANT))
+                                            if (!pEntity->serialnumber)
                                             {
-                                                if (pEntity->v.flags & FL_CLIENT)
+                                                if (!(pEntity->v.flags & FL_DORMANT))
                                                 {
-                                                    ::Hook_ClientPutInServer_Post(pEntity);
+                                                    if (pEntity->v.flags & FL_CLIENT)
+                                                    {
+                                                        ::Hook_ClientConnect(pEntity, nullptr, nullptr, nullptr);
+                                                        {
+                                                            ::Hook_ClientConnect_Post(pEntity, nullptr, nullptr, nullptr);
+                                                            {
+                                                                ::Hook_ClientPutInServer_Post(pEntity);
+                                                            }
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -951,9 +977,9 @@ C_DLLEXPORT int Meta_Attach(::PLUG_LOADTIME plugLoadTime, ::META_FUNCTIONS* pFun
                                 }
                             }
                         }
-                    }
 
-                    ::g_bNoReturn = { };
+                        ::g_bNoReturn = { };
+                    }
                 }
             }
         }
@@ -1036,6 +1062,8 @@ int Hook_Spawn(::edict_t* pEntity) noexcept
 
     if (!::g_bStripper)
     {
+        ::g_llMapChange = ::std::time(nullptr);
+
         strPath.assign(::g_strGameDir + "/addons/hgsm/stripper.cfg");
         {
             bErrorStripper = true;
@@ -1337,14 +1365,22 @@ int Hook_Spawn(::edict_t* pEntity) noexcept
                                                                                                     }
 
                                                                                                     {
-                                                                                                        do
+                                                                                                        if (!::g_bNoReturn)
                                                                                                         {
-                                                                                                            ::gpMetaGlobals->mres = ::MRES_SUPERCEDE;
+                                                                                                            do
+                                                                                                            {
+                                                                                                                ::gpMetaGlobals->mres = ::MRES_SUPERCEDE;
 
-                                                                                                            return xTo(true, int);
+                                                                                                                return xTo(true, int);
+                                                                                                            }
+
+                                                                                                            while (false);
                                                                                                         }
 
-                                                                                                        while (false);
+                                                                                                        else
+                                                                                                        {
+                                                                                                            return { };
+                                                                                                        }
                                                                                                     }
                                                                                                 }
 
@@ -1489,14 +1525,24 @@ int Hook_Spawn(::edict_t* pEntity) noexcept
         }
     }
 
-    do
+    if (!::g_bNoReturn)
     {
-        ::gpMetaGlobals->mres = ::MRES_IGNORED;
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
 
-        return xTo(false, int);
+            return ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+        }
+
+        while (false);
     }
 
-    while (false);
+    else
+    {
+        return { };
+    }
+
+    return { };
 }
 
 void Hook_ServerActivate(::edict_t*, int, int) noexcept
@@ -1536,6 +1582,8 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
     static bool bDisablePrioBoost{ };
 
 #endif
+
+    ::g_llMapChange = ::std::time(nullptr);
 
     ::g_strWelcome_1.clear();
     {
@@ -1585,6 +1633,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
     ::g_bFixScore = { };
     ::g_bRealScore = { };
     ::g_bRealScoreFriendly = { };
+    ::g_bFriendlyDecrease = { };
     ::g_bFixKills = { };
     ::g_bFixDeaths = { };
     ::g_bNoWeapons = { };
@@ -2100,6 +2149,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
             ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+            ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
             ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
             ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
             ::std::printf("'Zero Money' Is Now '%s'\n", ::g_bZeroMoney ? "TRUE" : "FALSE");
@@ -2178,6 +2228,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
         ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
         ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
         ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+        ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
         ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
         ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
         ::std::printf("'Zero Money' Is Now '%s'\n", ::g_bZeroMoney ? "TRUE" : "FALSE");
@@ -2258,6 +2309,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
             ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+            ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
             ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
             ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
             ::std::printf("'Zero Money' Is Now '%s'\n", ::g_bZeroMoney ? "TRUE" : "FALSE");
@@ -2335,6 +2387,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
                 ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+                ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
                 ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
                 ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
                 ::std::printf("'Zero Money' Is Now '%s'\n", ::g_bZeroMoney ? "TRUE" : "FALSE");
@@ -2410,6 +2463,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
                 ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+                ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
                 ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
                 ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
                 ::std::printf("'Zero Money' Is Now '%s'\n", ::g_bZeroMoney ? "TRUE" : "FALSE");
@@ -2595,6 +2649,24 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
         ::g_bRealScoreFriendly = jsTree["Real Score Friendly"].get < bool >();
         {
             ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+        }
+    }
+
+    if (jsTree["Friendly Decrease"].empty())
+    {
+        ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
+    }
+
+    else if (!jsTree["Friendly Decrease"].is_boolean())
+    {
+        ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
+    }
+
+    else
+    {
+        ::g_bFriendlyDecrease = jsTree["Friendly Decrease"].get < bool >();
+        {
+            ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
         }
     }
 
@@ -3357,6 +3429,82 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
     }
 }
 
+void Hook_ServerDeactivate() noexcept
+{
+    static int nIter{ }, nEntity{ };
+
+    static ::edict_t* pEntity{ };
+
+    ::g_llMapChange = ::std::time(nullptr);
+    {
+        ::g_bStripper = { };
+        ::g_bKvEditor = { };
+        ::g_bKvAdder = { };
+        ::g_bMsgsRcvd = { };
+
+        {
+            for (nIter = { }; nIter < 16384; nIter++)
+            {
+                ::g_mapKeyValues[nIter].clear();
+            }
+
+            {
+                if (!::g_bNoReturn)
+                {
+                    ::g_bNoReturn = true;
+
+                    {
+                        for (nEntity = xTo(true, int); nEntity <= ::gpGlobals->maxClients; nEntity++)
+                        {
+                            if (pEntity = ::INDEXENT(nEntity))
+                            {
+                                if (!pEntity->free)
+                                {
+                                    if (pEntity->pvPrivateData)
+                                    {
+                                        if (!pEntity->serialnumber)
+                                        {
+                                            if (!(pEntity->v.flags & FL_DORMANT))
+                                            {
+                                                if (pEntity->v.flags & FL_CLIENT)
+                                                {
+                                                    ::Hook_ClientDisconnect(pEntity);
+                                                    {
+                                                        ::Hook_ClientDisconnect_Post(pEntity);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    ::g_bNoReturn = { };
+                }
+            }
+        }
+    }
+
+    if (!::g_bNoReturn)
+    {
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
+
+            return;
+        }
+
+        while (false);
+    }
+
+    else
+    {
+        return;
+    }
+}
+
 void Hook_KeyValue(::edict_t* pEntity, ::KeyValueData* pKvData) noexcept
 {
     static ::std::string strClass{ }, strMap{ }, strPath{ };
@@ -3571,14 +3719,22 @@ void Hook_KeyValue(::edict_t* pEntity, ::KeyValueData* pKvData) noexcept
                                                                                                                                                 }
 
                                                                                                                                                 {
-                                                                                                                                                    do
+                                                                                                                                                    if (!::g_bNoReturn)
                                                                                                                                                     {
-                                                                                                                                                        ::gpMetaGlobals->mres = ::MRES_SUPERCEDE;
+                                                                                                                                                        do
+                                                                                                                                                        {
+                                                                                                                                                            ::gpMetaGlobals->mres = ::MRES_SUPERCEDE;
 
-                                                                                                                                                        return;
+                                                                                                                                                            return;
+                                                                                                                                                        }
+
+                                                                                                                                                        while (false);
                                                                                                                                                     }
 
-                                                                                                                                                    while (false);
+                                                                                                                                                    else
+                                                                                                                                                    {
+                                                                                                                                                        return;
+                                                                                                                                                    }
                                                                                                                                                 }
                                                                                                                                             }
                                                                                                                                         }
@@ -3616,14 +3772,169 @@ void Hook_KeyValue(::edict_t* pEntity, ::KeyValueData* pKvData) noexcept
         }
     }
 
-    do
+    if (!::g_bNoReturn)
     {
-        ::gpMetaGlobals->mres = ::MRES_IGNORED;
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
 
-        return;
+            return;
+        }
+
+        while (false);
     }
 
-    while (false);
+    else
+    {
+        return;
+    }
+}
+
+int Hook_ClientConnect(::edict_t* pEntity, const char* pszName, const char* pszAddr, char* pszReason) noexcept
+{
+    static int nEntity{ };
+    static long long llNow{ };
+
+    static ::std::string strCmd{ };
+
+    if (pEntity)
+    {
+        if ((nEntity = ::ENTINDEX(pEntity)) > 0)
+        {
+            if (::g_bRealScore)
+            {
+                ::g_nDeaths[nEntity] = { };
+                {
+                    ::g_nKills[nEntity] = { };
+                }
+            }
+
+            if (::g_bHideRadar)
+            {
+                ::g_bRadar[nEntity] = { };
+            }
+
+            if (::g_nArmor)
+            {
+                ::g_bArmor[nEntity] = { };
+            }
+
+            if (::g_bHideFlash)
+            {
+                if (::g_nHideWeapon > 0)
+                {
+                    if (::g_nCrosshair > 0)
+                    {
+                        ::g_bHide[nEntity] = { };
+                    }
+                }
+            }
+
+            else if (::g_bHideMoney)
+            {
+                if (::g_nHideWeapon > 0)
+                {
+                    if (::g_nCrosshair > 0)
+                    {
+                        ::g_bHide[nEntity] = { };
+                    }
+                }
+            }
+
+            else if (::g_bHideTimer)
+            {
+                if (::g_nHideWeapon > 0)
+                {
+                    if (::g_nCrosshair > 0)
+                    {
+                        ::g_bHide[nEntity] = { };
+                    }
+                }
+            }
+
+            else
+            {
+
+            }
+
+            if (!::g_strWelcome_1.empty())
+            {
+                if (::g_strWelcome_1.length() <= 190)
+                {
+                    if (::g_strWelcome_1.size() <= 190)
+                    {
+                        if (::g_nTextMsg > 0)
+                        {
+                            ::g_bShow[nEntity] = { };
+                        }
+                    }
+                }
+            }
+
+            if (STRING(::gpGlobals->mapname))
+            {
+                if (::g_llMapChange)
+                {
+                    if (!::numUsersConnected(nEntity))
+                    {
+                        if (((llNow = ::std::time(nullptr)) - ::g_llMapChange) >= 60)
+                        {
+                            strCmd.assign("changelevel");
+                            {
+                                strCmd.append(" ");
+                                {
+                                    strCmd.append("\"");
+                                    {
+                                        strCmd.append(STRING(::gpGlobals->mapname));
+                                        {
+                                            strCmd.append("\"");
+                                            {
+                                                strCmd.append("\n");
+                                                {
+                                                    strCmd.shrink_to_fit();
+                                                    {
+                                                        (*::g_engfuncs.pfnServerCommand) (strCmd.c_str());
+                                                        {
+                                                            strCmd.clear();
+                                                            {
+                                                                strCmd.shrink_to_fit();
+                                                                {
+                                                                    ::g_llMapChange = llNow;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (!::g_bNoReturn)
+    {
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
+
+            return ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+        }
+
+        while (false);
+    }
+
+    else
+    {
+        return { };
+    }
+
+    return { };
 }
 
 void Hook_ClientDisconnect(::edict_t* pEntity) noexcept
@@ -3634,6 +3945,14 @@ void Hook_ClientDisconnect(::edict_t* pEntity) noexcept
     {
         if ((nEntity = ::ENTINDEX(pEntity)) > 0)
         {
+            if (::g_bRealScore)
+            {
+                ::g_nDeaths[nEntity] = { };
+                {
+                    ::g_nKills[nEntity] = { };
+                }
+            }
+
             if (::g_bHideRadar)
             {
                 ::g_bRadar[nEntity] = { };
@@ -3698,41 +4017,98 @@ void Hook_ClientDisconnect(::edict_t* pEntity) noexcept
         }
     }
 
-    do
+    if (!::g_bNoReturn)
     {
-        ::gpMetaGlobals->mres = ::MRES_IGNORED;
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
 
-        return;
+            return;
+        }
+
+        while (false);
     }
 
-    while (false);
+    else
+    {
+        return;
+    }
 }
 
 void Hook_ServerDeactivate_Post() noexcept
 {
-    static int nIter{ };
+    static int nIter{ }, nEntity{ };
 
+    static ::edict_t* pEntity{ };
+
+    ::g_llMapChange = ::std::time(nullptr);
     {
         ::g_bStripper = { };
         ::g_bKvEditor = { };
         ::g_bKvAdder = { };
+        ::g_bMsgsRcvd = { };
 
         {
             for (nIter = { }; nIter < 16384; nIter++)
             {
                 ::g_mapKeyValues[nIter].clear();
             }
+
+            {
+                if (!::g_bNoReturn)
+                {
+                    ::g_bNoReturn = true;
+
+                    {
+                        for (nEntity = xTo(true, int); nEntity <= ::gpGlobals->maxClients; nEntity++)
+                        {
+                            if (pEntity = ::INDEXENT(nEntity))
+                            {
+                                if (!pEntity->free)
+                                {
+                                    if (pEntity->pvPrivateData)
+                                    {
+                                        if (!pEntity->serialnumber)
+                                        {
+                                            if (!(pEntity->v.flags & FL_DORMANT))
+                                            {
+                                                if (pEntity->v.flags & FL_CLIENT)
+                                                {
+                                                    ::Hook_ClientDisconnect(pEntity);
+                                                    {
+                                                        ::Hook_ClientDisconnect_Post(pEntity);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    ::g_bNoReturn = { };
+                }
+            }
         }
     }
 
-    do
+    if (!::g_bNoReturn)
     {
-        ::gpMetaGlobals->mres = ::MRES_IGNORED;
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
 
-        return;
+            return;
+        }
+
+        while (false);
     }
 
-    while (false);
+    else
+    {
+        return;
+    }
 }
 
 void Hook_ServerActivate_Post(::edict_t*, int, int) noexcept
@@ -3743,6 +4119,8 @@ void Hook_ServerActivate_Post(::edict_t*, int, int) noexcept
     static ::cvar_t* pConVar{ };
 
     static bool bFlags{ };
+
+    ::g_llMapChange = ::std::time(nullptr);
 
     strPath.assign(::g_strGameDir + "/addons/hgsm/reveal_console_variables.cfg");
 
@@ -4072,7 +4450,7 @@ void Hook_StartFrame_Post() noexcept
 {
     static long long llTime{ }, llStamp{ };
     static int nEntity{ }, nIter{ }, nFov{ }, nTeam{ }, nKevlar{ };
-    static bool bAltered{ }, bMsgs{ };
+    static bool bAltered{ };
 
     static ::std::string strCmd{ };
 
@@ -4080,7 +4458,7 @@ void Hook_StartFrame_Post() noexcept
 
     if (++nIter == ::g_nTicks)
     {
-        if (!bMsgs)
+        if (!::g_bMsgsRcvd)
         {
             if (!::g_nResetHud)
             {
@@ -4177,7 +4555,7 @@ void Hook_StartFrame_Post() noexcept
 
             }
 
-            bMsgs = true;
+            ::g_bMsgsRcvd = true;
         }
 
         for (nEntity = xTo(true, int); nEntity <= ::gpGlobals->maxClients; nEntity++)
@@ -5201,6 +5579,9 @@ void Hook_StartFrame_Post() noexcept
                                             bAltered = true;
                                             {
                                                 pEntity->v.frags = { };
+                                                {
+                                                    ::g_nKills[nEntity] = { };
+                                                }
                                             }
                                         }
 
@@ -5213,6 +5594,9 @@ void Hook_StartFrame_Post() noexcept
                                                     *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = { };
                                                     {
                                                         bAltered = true;
+                                                        {
+                                                            ::g_nDeaths[nEntity] = { };
+                                                        }
                                                     }
                                                 }
                                             }
@@ -5224,6 +5608,37 @@ void Hook_StartFrame_Post() noexcept
                                                     *((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) = { };
                                                     {
                                                         bAltered = true;
+                                                        {
+                                                            ::g_nDeaths[nEntity] = { };
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if (!::g_strGameDir.compare("dod"))
+                                        {
+                                            if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                            {
+                                                *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                {
+                                                    bAltered = true;
+                                                    {
+                                                        ::g_nDeaths[nEntity] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        else
+                                        {
+                                            if (*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                            {
+                                                *((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                {
+                                                    bAltered = true;
+                                                    {
+                                                        ::g_nDeaths[nEntity] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
                                                     }
                                                 }
                                             }
@@ -5237,6 +5652,9 @@ void Hook_StartFrame_Post() noexcept
                                             bAltered = true;
                                             {
                                                 pEntity->v.frags = { };
+                                                {
+                                                    ::g_nKills[nEntity] = { };
+                                                }
                                             }
                                         }
                                     }
@@ -5252,6 +5670,9 @@ void Hook_StartFrame_Post() noexcept
                                                     *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = { };
                                                     {
                                                         bAltered = true;
+                                                        {
+                                                            ::g_nDeaths[nEntity] = { };
+                                                        }
                                                     }
                                                 }
                                             }
@@ -5263,6 +5684,37 @@ void Hook_StartFrame_Post() noexcept
                                                     *((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) = { };
                                                     {
                                                         bAltered = true;
+                                                        {
+                                                            ::g_nDeaths[nEntity] = { };
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if (!::g_strGameDir.compare("dod"))
+                                        {
+                                            if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                            {
+                                                *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                {
+                                                    bAltered = true;
+                                                    {
+                                                        ::g_nDeaths[nEntity] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        else
+                                        {
+                                            if (*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                            {
+                                                *((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                {
+                                                    bAltered = true;
+                                                    {
+                                                        ::g_nDeaths[nEntity] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
                                                     }
                                                 }
                                             }
@@ -6025,22 +6477,129 @@ void Hook_StartFrame_Post() noexcept
         nIter = { };
     }
 
-    do
+    if (!::g_bNoReturn)
     {
-        ::gpMetaGlobals->mres = ::MRES_IGNORED;
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
 
-        return;
+            return;
+        }
+
+        while (false);
     }
 
-    while (false);
+    else
+    {
+        return;
+    }
+}
+
+int Hook_ClientConnect_Post(::edict_t* pEntity, const char* pszName, const char* pszAddr, char* pszReason) noexcept
+{
+    static int nEntity{ };
+
+    if (pEntity)
+    {
+        if ((nEntity = ::ENTINDEX(pEntity)) > 0)
+        {
+            if (::g_bRealScore)
+            {
+                ::g_nDeaths[nEntity] = { };
+                {
+                    ::g_nKills[nEntity] = { };
+                }
+            }
+
+            if (::g_bHideRadar)
+            {
+                ::g_bRadar[nEntity] = { };
+            }
+
+            if (::g_nArmor)
+            {
+                ::g_bArmor[nEntity] = { };
+            }
+
+            if (::g_bHideFlash)
+            {
+                if (::g_nHideWeapon > 0)
+                {
+                    if (::g_nCrosshair > 0)
+                    {
+                        ::g_bHide[nEntity] = { };
+                    }
+                }
+            }
+
+            else if (::g_bHideMoney)
+            {
+                if (::g_nHideWeapon > 0)
+                {
+                    if (::g_nCrosshair > 0)
+                    {
+                        ::g_bHide[nEntity] = { };
+                    }
+                }
+            }
+
+            else if (::g_bHideTimer)
+            {
+                if (::g_nHideWeapon > 0)
+                {
+                    if (::g_nCrosshair > 0)
+                    {
+                        ::g_bHide[nEntity] = { };
+                    }
+                }
+            }
+
+            else
+            {
+
+            }
+
+            if (!::g_strWelcome_1.empty())
+            {
+                if (::g_strWelcome_1.length() <= 190)
+                {
+                    if (::g_strWelcome_1.size() <= 190)
+                    {
+                        if (::g_nTextMsg > 0)
+                        {
+                            ::g_bShow[nEntity] = { };
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (!::g_bNoReturn)
+    {
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
+
+            return ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+        }
+
+        while (false);
+    }
+
+    else
+    {
+        return { };
+    }
+
+    return { };
 }
 
 void Hook_ClientPutInServer_Post(::edict_t* pEntity) noexcept
 {
     static int nEntity{ };
-    static bool bMsgs{ };
 
-    if (!bMsgs)
+    if (!::g_bMsgsRcvd)
     {
         if (!::g_nResetHud)
         {
@@ -6137,7 +6696,7 @@ void Hook_ClientPutInServer_Post(::edict_t* pEntity) noexcept
 
         }
 
-        bMsgs = true;
+        ::g_bMsgsRcvd = true;
     }
 
     if (pEntity)
@@ -6245,6 +6804,14 @@ void Hook_ClientDisconnect_Post(::edict_t* pEntity) noexcept
     {
         if ((nEntity = ::ENTINDEX(pEntity)) > 0)
         {
+            if (::g_bRealScore)
+            {
+                ::g_nDeaths[nEntity] = { };
+                {
+                    ::g_nKills[nEntity] = { };
+                }
+            }
+
             if (::g_bHideRadar)
             {
                 ::g_bRadar[nEntity] = { };
@@ -6253,14 +6820,6 @@ void Hook_ClientDisconnect_Post(::edict_t* pEntity) noexcept
             if (::g_nArmor)
             {
                 ::g_bArmor[nEntity] = { };
-            }
-
-            if (::g_bRealScore)
-            {
-                ::g_nDeaths[nEntity] = { };
-                {
-                    ::g_nKills[nEntity] = { };
-                }
             }
 
             if (::g_bHideFlash)
@@ -6317,22 +6876,219 @@ void Hook_ClientDisconnect_Post(::edict_t* pEntity) noexcept
         }
     }
 
-    do
+    if (!::g_bNoReturn)
     {
-        ::gpMetaGlobals->mres = ::MRES_IGNORED;
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
 
-        return;
+            return;
+        }
+
+        while (false);
     }
 
-    while (false);
+    else
+    {
+        return;
+    }
+}
+
+int Hook_RegUserMsg(const char* pszMsg, int) noexcept
+{
+    if (pszMsg)
+    {
+        if (*pszMsg)
+        {
+            if (!::g_nResetHud)
+            {
+                if (!::std::strcmp(pszMsg, "ResetHUD"))
+                {
+                    ::g_nResetHud = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+
+            if (!::g_nDeathMsg)
+            {
+                if (!::std::strcmp(pszMsg, "DeathMsg"))
+                {
+                    ::g_nDeathMsg = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+
+            if (!::g_nTextMsg)
+            {
+                if (!::std::strcmp(pszMsg, "TextMsg"))
+                {
+                    ::g_nTextMsg = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+
+            if (!::g_nArmorType)
+            {
+                if (!::std::strcmp(pszMsg, "ArmorType"))
+                {
+                    ::g_nArmorType = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+
+            if (!::g_nScoreInfo)
+            {
+                if (!::std::strcmp(pszMsg, "ScoreInfo"))
+                {
+                    ::g_nScoreInfo = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+
+            if (!::g_nScoreShort)
+            {
+                if (!::g_strGameDir.compare("dod"))
+                {
+                    if (!::std::strcmp(pszMsg, "ScoreShort"))
+                    {
+                        ::g_nScoreShort = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                    }
+                }
+            }
+
+            if (!::g_nHideWeapon)
+            {
+                if (!::std::strcmp(pszMsg, "HideWeapon"))
+                {
+                    ::g_nHideWeapon = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+
+            if (!::g_nCrosshair)
+            {
+                if (!::std::strcmp(pszMsg, "Crosshair"))
+                {
+                    ::g_nCrosshair = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+        }
+    }
+
+    if (!::g_bNoReturn)
+    {
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
+
+            return ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+        }
+
+        while (false);
+    }
+
+    else
+    {
+        return { };
+    }
+
+    return { };
+}
+
+int Hook_RegUserMsg_Post(const char* pszMsg, int) noexcept
+{
+    if (pszMsg)
+    {
+        if (*pszMsg)
+        {
+            if (!::g_nResetHud)
+            {
+                if (!::std::strcmp(pszMsg, "ResetHUD"))
+                {
+                    ::g_nResetHud = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+
+            if (!::g_nDeathMsg)
+            {
+                if (!::std::strcmp(pszMsg, "DeathMsg"))
+                {
+                    ::g_nDeathMsg = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+
+            if (!::g_nTextMsg)
+            {
+                if (!::std::strcmp(pszMsg, "TextMsg"))
+                {
+                    ::g_nTextMsg = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+
+            if (!::g_nArmorType)
+            {
+                if (!::std::strcmp(pszMsg, "ArmorType"))
+                {
+                    ::g_nArmorType = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+
+            if (!::g_nScoreInfo)
+            {
+                if (!::std::strcmp(pszMsg, "ScoreInfo"))
+                {
+                    ::g_nScoreInfo = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+
+            if (!::g_nScoreShort)
+            {
+                if (!::g_strGameDir.compare("dod"))
+                {
+                    if (!::std::strcmp(pszMsg, "ScoreShort"))
+                    {
+                        ::g_nScoreShort = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                    }
+                }
+            }
+
+            if (!::g_nHideWeapon)
+            {
+                if (!::std::strcmp(pszMsg, "HideWeapon"))
+                {
+                    ::g_nHideWeapon = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+
+            if (!::g_nCrosshair)
+            {
+                if (!::std::strcmp(pszMsg, "Crosshair"))
+                {
+                    ::g_nCrosshair = ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+                }
+            }
+        }
+    }
+
+    if (!::g_bNoReturn)
+    {
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
+
+            return ((::gpMetaGlobals->orig_ret) ? (*(int*) ::gpMetaGlobals->orig_ret) : (xTo(false, int)));
+        }
+
+        while (false);
+    }
+
+    else
+    {
+        return { };
+    }
+
+    return { };
 }
 
 void Hook_MessageBegin_Post(int, int nMsg, const float*, ::edict_t* pEntity) noexcept
 {
-    static bool bMsgs{ };
     static int nEntity{ };
 
-    if (!bMsgs)
+    if (!::g_bMsgsRcvd)
     {
         if (!::g_nResetHud)
         {
@@ -6429,7 +7185,7 @@ void Hook_MessageBegin_Post(int, int nMsg, const float*, ::edict_t* pEntity) noe
 
         }
 
-        bMsgs = true;
+        ::g_bMsgsRcvd = true;
     }
 
     if (pEntity)
@@ -6760,14 +7516,22 @@ void Hook_MessageBegin_Post(int, int nMsg, const float*, ::edict_t* pEntity) noe
         }
     }
 
-    do
+    if (!::g_bNoReturn)
     {
-        ::gpMetaGlobals->mres = ::MRES_IGNORED;
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
 
-        return;
+            return;
+        }
+
+        while (false);
     }
 
-    while (false);
+    else
+    {
+        return;
+    }
 }
 
 #ifdef WIN32
@@ -6787,7 +7551,7 @@ void Hook_WriteByte_Post(int nByte) noexcept
         {
             if (::g_bRealScore)
             {
-                if (++ ::g_nDeathMsgByte == xTo(true, int))
+                if (++::g_nDeathMsgByte == xTo(true, int))
                 {
                     ::g_nKiller = nByte;
                 }
@@ -6803,14 +7567,22 @@ void Hook_WriteByte_Post(int nByte) noexcept
         }
     }
 
-    do
+    if (!::g_bNoReturn)
     {
-        ::gpMetaGlobals->mres = ::MRES_IGNORED;
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
 
-        return;
+            return;
+        }
+
+        while (false);
     }
 
-    while (false);
+    else
+    {
+        return;
+    }
 }
 
 void Hook_MessageEnd_Post() noexcept
@@ -6819,9 +7591,9 @@ void Hook_MessageEnd_Post() noexcept
     static ::edict_t* pEntity{ }, * pVictim{ };
 
     static int nTeam{ }, nFov{ }, nKevlar{ };
-    static bool bAltered{ }, bMsgs{ }, bConVars{ }, bSafe{ };
+    static bool bAltered{ }, bConVars{ }, bSafe{ };
 
-    if (!bMsgs)
+    if (!::g_bMsgsRcvd)
     {
         if (!::g_nResetHud)
         {
@@ -6918,7 +7690,7 @@ void Hook_MessageEnd_Post() noexcept
 
         }
 
-        bMsgs = true;
+        ::g_bMsgsRcvd = true;
     }
 
     if (::g_nResetHud > 0)
@@ -7952,6 +8724,9 @@ void Hook_MessageEnd_Post() noexcept
                                                             bAltered = true;
                                                             {
                                                                 pEntity->v.frags = { };
+                                                                {
+                                                                    ::g_nKills[::g_nResetHudId] = { };
+                                                                }
                                                             }
                                                         }
 
@@ -7964,6 +8739,9 @@ void Hook_MessageEnd_Post() noexcept
                                                                     *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = { };
                                                                     {
                                                                         bAltered = true;
+                                                                        {
+                                                                            ::g_nDeaths[::g_nResetHudId] = { };
+                                                                        }
                                                                     }
                                                                 }
                                                             }
@@ -7975,6 +8753,37 @@ void Hook_MessageEnd_Post() noexcept
                                                                     *((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) = { };
                                                                     {
                                                                         bAltered = true;
+                                                                        {
+                                                                            ::g_nDeaths[::g_nResetHudId] = { };
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+
+                                                        if (!::g_strGameDir.compare("dod"))
+                                                        {
+                                                            if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                                            {
+                                                                *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                {
+                                                                    bAltered = true;
+                                                                    {
+                                                                        ::g_nDeaths[::g_nResetHudId] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+
+                                                        else
+                                                        {
+                                                            if (*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                                            {
+                                                                *((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                {
+                                                                    bAltered = true;
+                                                                    {
+                                                                        ::g_nDeaths[::g_nResetHudId] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
                                                                     }
                                                                 }
                                                             }
@@ -7988,6 +8797,9 @@ void Hook_MessageEnd_Post() noexcept
                                                             bAltered = true;
                                                             {
                                                                 pEntity->v.frags = { };
+                                                                {
+                                                                    ::g_nKills[::g_nResetHudId] = { };
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -8003,6 +8815,9 @@ void Hook_MessageEnd_Post() noexcept
                                                                     *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = { };
                                                                     {
                                                                         bAltered = true;
+                                                                        {
+                                                                            ::g_nDeaths[::g_nResetHudId] = { };
+                                                                        }
                                                                     }
                                                                 }
                                                             }
@@ -8014,6 +8829,37 @@ void Hook_MessageEnd_Post() noexcept
                                                                     *((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) = { };
                                                                     {
                                                                         bAltered = true;
+                                                                        {
+                                                                            ::g_nDeaths[::g_nResetHudId] = { };
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+
+                                                        if (!::g_strGameDir.compare("dod"))
+                                                        {
+                                                            if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                                            {
+                                                                *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                {
+                                                                    bAltered = true;
+                                                                    {
+                                                                        ::g_nDeaths[::g_nResetHudId] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+
+                                                        else
+                                                        {
+                                                            if (*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                                            {
+                                                                *((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                {
+                                                                    bAltered = true;
+                                                                    {
+                                                                        ::g_nDeaths[::g_nResetHudId] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
                                                                     }
                                                                 }
                                                             }
@@ -9343,6 +10189,9 @@ void Hook_MessageEnd_Post() noexcept
                                                                 bAltered = true;
                                                                 {
                                                                     pEntity->v.frags = { };
+                                                                    {
+                                                                        ::g_nKills[::g_nResetHudId] = { };
+                                                                    }
                                                                 }
                                                             }
 
@@ -9355,6 +10204,9 @@ void Hook_MessageEnd_Post() noexcept
                                                                         *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = { };
                                                                         {
                                                                             bAltered = true;
+                                                                            {
+                                                                                ::g_nDeaths[::g_nResetHudId] = { };
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -9366,6 +10218,37 @@ void Hook_MessageEnd_Post() noexcept
                                                                         *((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) = { };
                                                                         {
                                                                             bAltered = true;
+                                                                            {
+                                                                                ::g_nDeaths[::g_nResetHudId] = { };
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            if (!::g_strGameDir.compare("dod"))
+                                                            {
+                                                                if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                                                {
+                                                                    *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                    {
+                                                                        bAltered = true;
+                                                                        {
+                                                                            ::g_nDeaths[::g_nResetHudId] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            else
+                                                            {
+                                                                if (*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                                                {
+                                                                    *((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                    {
+                                                                        bAltered = true;
+                                                                        {
+                                                                            ::g_nDeaths[::g_nResetHudId] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
                                                                         }
                                                                     }
                                                                 }
@@ -9379,6 +10262,9 @@ void Hook_MessageEnd_Post() noexcept
                                                                 bAltered = true;
                                                                 {
                                                                     pEntity->v.frags = { };
+                                                                    {
+                                                                        ::g_nKills[::g_nResetHudId] = { };
+                                                                    }
                                                                 }
                                                             }
                                                         }
@@ -9394,6 +10280,9 @@ void Hook_MessageEnd_Post() noexcept
                                                                         *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = { };
                                                                         {
                                                                             bAltered = true;
+                                                                            {
+                                                                                ::g_nDeaths[::g_nResetHudId] = { };
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -9405,6 +10294,37 @@ void Hook_MessageEnd_Post() noexcept
                                                                         *((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) = { };
                                                                         {
                                                                             bAltered = true;
+                                                                            {
+                                                                                ::g_nDeaths[::g_nResetHudId] = { };
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            if (!::g_strGameDir.compare("dod"))
+                                                            {
+                                                                if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                                                {
+                                                                    *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                    {
+                                                                        bAltered = true;
+                                                                        {
+                                                                            ::g_nDeaths[::g_nResetHudId] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            else
+                                                            {
+                                                                if (*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                                                {
+                                                                    *((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                    {
+                                                                        bAltered = true;
+                                                                        {
+                                                                            ::g_nDeaths[::g_nResetHudId] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
                                                                         }
                                                                     }
                                                                 }
@@ -9945,7 +10865,13 @@ void Hook_MessageEnd_Post() noexcept
                                                         {
                                                             if (pEntity->v.flags & FL_CLIENT)
                                                             {
-                                                                ::g_nDeaths[::g_nVictim] ++;
+                                                                ::g_nDeaths[::g_nVictim]++;
+                                                                {
+                                                                    if (::g_bFixDeaths || ::g_bFixScore)
+                                                                    {
+                                                                        ::g_nDeaths[::g_nVictim] = ::ValClamp(::g_nDeaths[::g_nVictim], xTo(false, int), ::g_nKills[::g_nVictim]);
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -9965,7 +10891,7 @@ void Hook_MessageEnd_Post() noexcept
                                                         {
                                                             if (pEntity->v.flags & FL_CLIENT)
                                                             {
-                                                                ::g_nKills[::g_nKiller] ++;
+                                                                ::g_nKills[::g_nKiller]++;
                                                             }
                                                         }
                                                     }
@@ -9993,11 +10919,17 @@ void Hook_MessageEnd_Post() noexcept
                                                         {
                                                             if (pEntity->v.flags & FL_CLIENT)
                                                             {
-                                                                ::g_nDeaths[::g_nVictim] ++;
+                                                                ::g_nDeaths[::g_nVictim]++;
                                                                 {
                                                                     pVictim = pEntity;
                                                                     {
                                                                         bSafe = true;
+                                                                        {
+                                                                            if (::g_bFixDeaths || ::g_bFixScore)
+                                                                            {
+                                                                                ::g_nDeaths[::g_nVictim] = ::ValClamp(::g_nDeaths[::g_nVictim], xTo(false, int), ::g_nKills[::g_nVictim]);
+                                                                            }
+                                                                        }
                                                                     }
                                                                 }
                                                             }
@@ -10021,7 +10953,7 @@ void Hook_MessageEnd_Post() noexcept
                                                             {
                                                                 if (::g_bRealScoreFriendly)
                                                                 {
-                                                                    ::g_nKills[::g_nKiller] ++;
+                                                                    ::g_nKills[::g_nKiller]++;
                                                                 }
 
                                                                 else
@@ -10034,7 +10966,15 @@ void Hook_MessageEnd_Post() noexcept
                                                                             {
                                                                                 if ((*((char*)pVictim->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs) != *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs)) && (*((char*)pVictim->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs + 1) != *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs + 1)))
                                                                                 {
-                                                                                    ::g_nKills[::g_nKiller] ++;
+                                                                                    ::g_nKills[::g_nKiller]++;
+                                                                                }
+
+                                                                                else
+                                                                                {
+                                                                                    if (::g_bFriendlyDecrease)
+                                                                                    {
+                                                                                        ::g_nKills[::g_nKiller]--;
+                                                                                    }
                                                                                 }
                                                                             }
 
@@ -10042,7 +10982,15 @@ void Hook_MessageEnd_Post() noexcept
                                                                             {
                                                                                 if (*((int*)pVictim->pvPrivateData + ::m_iTeam + ::g_nOsOffs) != *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs))
                                                                                 {
-                                                                                    ::g_nKills[::g_nKiller] ++;
+                                                                                    ::g_nKills[::g_nKiller]++;
+                                                                                }
+
+                                                                                else
+                                                                                {
+                                                                                    if (::g_bFriendlyDecrease)
+                                                                                    {
+                                                                                        ::g_nKills[::g_nKiller]--;
+                                                                                    }
                                                                                 }
                                                                             }
                                                                         }
@@ -10111,7 +11059,13 @@ void Hook_MessageEnd_Post() noexcept
                                                     {
                                                         if (pEntity->v.flags & FL_CLIENT)
                                                         {
-                                                            ::g_nDeaths[::g_nVictim] ++;
+                                                            ::g_nDeaths[::g_nVictim]++;
+                                                            {
+                                                                if (::g_bFixDeaths || ::g_bFixScore)
+                                                                {
+                                                                    ::g_nDeaths[::g_nVictim] = ::ValClamp(::g_nDeaths[::g_nVictim], xTo(false, int), ::g_nKills[::g_nVictim]);
+                                                                }
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -10131,7 +11085,7 @@ void Hook_MessageEnd_Post() noexcept
                                                     {
                                                         if (pEntity->v.flags & FL_CLIENT)
                                                         {
-                                                            ::g_nKills[::g_nKiller] ++;
+                                                            ::g_nKills[::g_nKiller]++;
                                                         }
                                                     }
                                                 }
@@ -10159,11 +11113,17 @@ void Hook_MessageEnd_Post() noexcept
                                                     {
                                                         if (pEntity->v.flags & FL_CLIENT)
                                                         {
-                                                            ::g_nDeaths[::g_nVictim] ++;
+                                                            ::g_nDeaths[::g_nVictim]++;
                                                             {
                                                                 pVictim = pEntity;
                                                                 {
                                                                     bSafe = true;
+                                                                    {
+                                                                        if (::g_bFixDeaths || ::g_bFixScore)
+                                                                        {
+                                                                            ::g_nDeaths[::g_nVictim] = ::ValClamp(::g_nDeaths[::g_nVictim], xTo(false, int), ::g_nKills[::g_nVictim]);
+                                                                        }
+                                                                    }
                                                                 }
                                                             }
                                                         }
@@ -10187,7 +11147,7 @@ void Hook_MessageEnd_Post() noexcept
                                                         {
                                                             if (::g_bRealScoreFriendly)
                                                             {
-                                                                ::g_nKills[::g_nKiller] ++;
+                                                                ::g_nKills[::g_nKiller]++;
                                                             }
 
                                                             else
@@ -10200,7 +11160,15 @@ void Hook_MessageEnd_Post() noexcept
                                                                         {
                                                                             if ((*((char*)pVictim->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs) != *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs)) && (*((char*)pVictim->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs + 1) != *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs + 1)))
                                                                             {
-                                                                                ::g_nKills[::g_nKiller] ++;
+                                                                                ::g_nKills[::g_nKiller]++;
+                                                                            }
+
+                                                                            else
+                                                                            {
+                                                                                if (::g_bFriendlyDecrease)
+                                                                                {
+                                                                                    ::g_nKills[::g_nKiller]--;
+                                                                                }
                                                                             }
                                                                         }
 
@@ -10208,7 +11176,15 @@ void Hook_MessageEnd_Post() noexcept
                                                                         {
                                                                             if (*((int*)pVictim->pvPrivateData + ::m_iTeam + ::g_nOsOffs) != *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs))
                                                                             {
-                                                                                ::g_nKills[::g_nKiller] ++;
+                                                                                ::g_nKills[::g_nKiller]++;
+                                                                            }
+
+                                                                            else
+                                                                            {
+                                                                                if (::g_bFriendlyDecrease)
+                                                                                {
+                                                                                    ::g_nKills[::g_nKiller]--;
+                                                                                }
                                                                             }
                                                                         }
                                                                     }
@@ -10240,14 +11216,22 @@ void Hook_MessageEnd_Post() noexcept
         }
     }
 
-    do
+    if (!::g_bNoReturn)
     {
-        ::gpMetaGlobals->mres = ::MRES_IGNORED;
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
 
-        return;
+            return;
+        }
+
+        while (false);
     }
 
-    while (false);
+    else
+    {
+        return;
+    }
 }
 
 bool FileExists(::std::string strFile) noexcept
@@ -10509,14 +11493,14 @@ unsigned int ComputeSafeErasePos(char* pPtr) noexcept
         }
     }
 
-    return { };
+    return xTo(false, unsigned int);
 }
 
 unsigned int SafeErasePos(::std::string strIn, unsigned int uPos) noexcept
 {
     if (strIn.empty())
     {
-        return { };
+        return xTo(false, unsigned int);
     }
 
     else if (uPos > xTo(false, unsigned int))
@@ -10543,129 +11527,130 @@ void* operator new(unsigned int uMem)
 }
 
 void* operator new [](unsigned int uMem)
-{
-    return ::malloc(uMem);
-}
-
-void operator delete(void* pMem)
-{
-    ::free(pMem);
-}
-
-void operator delete [](void* pMem)
-{
-    ::free(pMem);
-}
-
-#endif
-
-#ifdef WIN32
-
-bool g_bMultiMediaFeatureIsActive{ };
-bool g_bMultiMediaFeatureShouldStopThreadWorker{ };
-
-unsigned int g_uiMultiMediaFeatureTimerResolution{ };
-unsigned int g_uiMultiMediaFeatureMinPeriodAvail{ };
-
-void* g_pMultiMediaFeatureThreadWorkerHandle{ };
-
-#endif
-
-#ifdef WIN32
-
-unsigned long __stdcall MultiMediaFeatureThreadWorkerFunction(void* pMultiMediaFeatureThreadWorkerData) noexcept
-{
-    static long long llTimeNow{ }, llTimeStamp{ };
-
-    static ::mmtime_tag multiMediaTime{ };
-
-    while (!::g_bMultiMediaFeatureShouldStopThreadWorker)
     {
-        llTimeNow = ::std::time(nullptr);
-        {
-            if ((llTimeNow - llTimeStamp) > ((long long)(5I8)))
-            {
-                llTimeStamp = llTimeNow;
-                {
-                    if (!::timeGetSystemTime(&multiMediaTime, sizeof multiMediaTime))
-                    {
-                        ::timeGetTime();
-                    }
+        return ::malloc(uMem);
+    }
 
-                    else
+    void operator delete(void* pMem)
+    {
+        ::free(pMem);
+    }
+
+    void operator delete [](void* pMem)
+        {
+            ::free(pMem);
+        }
+
+#endif
+
+#ifdef WIN32
+
+    bool g_bMultiMediaFeatureIsActive{ };
+    bool g_bMultiMediaFeatureShouldStopThreadWorker{ };
+
+    unsigned int g_uiMultiMediaFeatureTimerResolution{ };
+    unsigned int g_uiMultiMediaFeatureMinPeriodAvail{ };
+
+    void* g_pMultiMediaFeatureThreadWorkerHandle{ };
+
+#endif
+
+#ifdef WIN32
+
+    unsigned long __stdcall MultiMediaFeatureThreadWorkerFunction(void* pMultiMediaFeatureThreadWorkerData) noexcept
+    {
+        static long long llTimeNow{ }, llTimeStamp{ };
+
+        static ::mmtime_tag multiMediaTime{ };
+
+        while (!::g_bMultiMediaFeatureShouldStopThreadWorker)
+        {
+            llTimeNow = ::std::time(nullptr);
+            {
+                if ((llTimeNow - llTimeStamp) > ((long long)(5I8)))
+                {
+                    llTimeStamp = llTimeNow;
                     {
-                        ::timeGetTime();
+                        if (!::timeGetSystemTime(&multiMediaTime, sizeof multiMediaTime))
+                        {
+                            ::timeGetTime();
+                        }
+
+                        else
+                        {
+                            ::timeGetTime();
+                        }
                     }
                 }
             }
+
+            ::Sleep(((unsigned long)(100I8)));
         }
 
-        ::Sleep(((unsigned long)(100I8)));
+        return xTo(false, unsigned long);
     }
-
-    return { };
-}
 
 #endif
 
 #ifdef WIN32
 
-void MultiMediaFeatureTryAttach() noexcept
-{
-    ::timecaps_tag timeCaps{ };
+    void MultiMediaFeatureTryAttach() noexcept
     {
-        ::mmtime_tag multiMediaTime{ };
+        ::timecaps_tag timeCaps{ };
         {
-            if (!::timeGetDevCaps(&timeCaps, sizeof timeCaps))
+            ::mmtime_tag multiMediaTime{ };
             {
-                ::g_uiMultiMediaFeatureMinPeriodAvail = ((::std::max)(((unsigned int)(timeCaps.wPeriodMin)), ((unsigned int)(1I8))));
+                if (!::timeGetDevCaps(&timeCaps, sizeof timeCaps))
                 {
-                    ::g_uiMultiMediaFeatureTimerResolution = ((::std::min)(((unsigned int)(::g_uiMultiMediaFeatureMinPeriodAvail)), ((unsigned int)(timeCaps.wPeriodMax))));
+                    ::g_uiMultiMediaFeatureMinPeriodAvail = ((::std::max)(((unsigned int)(timeCaps.wPeriodMin)), ((unsigned int)(1I8))));
                     {
-                        if (!::timeBeginPeriod(::g_uiMultiMediaFeatureTimerResolution))
+                        ::g_uiMultiMediaFeatureTimerResolution = ((::std::min)(((unsigned int)(::g_uiMultiMediaFeatureMinPeriodAvail)), ((unsigned int)(timeCaps.wPeriodMax))));
                         {
-                            ::g_bMultiMediaFeatureIsActive = true;
+                            if (!::timeBeginPeriod(::g_uiMultiMediaFeatureTimerResolution))
                             {
-                                ::std::printf("[INFO] `::timeBeginPeriod(%d);` OK\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
+                                ::g_bMultiMediaFeatureIsActive = true;
                                 {
-                                    if (!::timeGetSystemTime(&multiMediaTime, sizeof multiMediaTime))
+                                    ::std::printf("[INFO] `::timeBeginPeriod(%d);` OK\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
                                     {
-                                        ::timeGetTime();
+                                        if (!::timeGetSystemTime(&multiMediaTime, sizeof multiMediaTime))
                                         {
-                                            ::std::printf("[INFO] `::timeGetSystemTime(...);` OK & `::timeGetTime();` OK\n");
+                                            ::timeGetTime();
                                             {
-                                                ::g_pMultiMediaFeatureThreadWorkerHandle = ::CreateThread(nullptr, { }, ::MultiMediaFeatureThreadWorkerFunction, nullptr, { }, nullptr);
+                                                ::std::printf("[INFO] `::timeGetSystemTime(...);` OK & `::timeGetTime();` OK\n");
                                                 {
-                                                    if (::g_pMultiMediaFeatureThreadWorkerHandle)
+                                                    ::g_pMultiMediaFeatureThreadWorkerHandle = ::CreateThread(nullptr, { }, ::MultiMediaFeatureThreadWorkerFunction, nullptr, { }, nullptr);
                                                     {
-                                                        ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` OK\n");
-                                                    }
+                                                        if (::g_pMultiMediaFeatureThreadWorkerHandle)
+                                                        {
+                                                            ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` OK\n");
+                                                        }
 
-                                                    else
-                                                    {
-                                                        ::std::printf("[WARN] `::MultiMediaFeatureThreadWorkerFunction(...);` FAILED\n");
+                                                        else
+                                                        {
+                                                            ::std::printf("[WARN] `::MultiMediaFeatureThreadWorkerFunction(...);` FAILED\n");
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
-                                    }
 
-                                    else
-                                    {
-                                        ::timeGetTime();
+                                        else
                                         {
-                                            ::std::printf("[WARN] `::timeGetSystemTime(...);` FAILED & `::timeGetTime();` OK\n");
+                                            ::timeGetTime();
                                             {
-                                                ::g_pMultiMediaFeatureThreadWorkerHandle = ::CreateThread(nullptr, { }, ::MultiMediaFeatureThreadWorkerFunction, nullptr, { }, nullptr);
+                                                ::std::printf("[WARN] `::timeGetSystemTime(...);` FAILED & `::timeGetTime();` OK\n");
                                                 {
-                                                    if (::g_pMultiMediaFeatureThreadWorkerHandle)
+                                                    ::g_pMultiMediaFeatureThreadWorkerHandle = ::CreateThread(nullptr, { }, ::MultiMediaFeatureThreadWorkerFunction, nullptr, { }, nullptr);
                                                     {
-                                                        ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` OK\n");
-                                                    }
+                                                        if (::g_pMultiMediaFeatureThreadWorkerHandle)
+                                                        {
+                                                            ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` OK\n");
+                                                        }
 
-                                                    else
-                                                    {
-                                                        ::std::printf("[WARN] `::MultiMediaFeatureThreadWorkerFunction(...);` FAILED\n");
+                                                        else
+                                                        {
+                                                            ::std::printf("[WARN] `::MultiMediaFeatureThreadWorkerFunction(...);` FAILED\n");
+                                                        }
                                                     }
                                                 }
                                             }
@@ -10673,115 +11658,118 @@ void MultiMediaFeatureTryAttach() noexcept
                                     }
                                 }
                             }
-                        }
 
-                        else
-                        {
-                            ::std::printf("[WARN] `::timeBeginPeriod(%d);` FAILED\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
+                            else
+                            {
+                                ::std::printf("[WARN] `::timeBeginPeriod(%d);` FAILED\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
+                            }
                         }
                     }
+                }
+
+                else
+                {
+                    ::std::printf("[WARN] `::timeGetDevCaps(...);` FAILED\n");
+                }
+            }
+        }
+    }
+
+#endif
+
+#ifdef WIN32
+
+    void MultiMediaFeatureTryDetach() noexcept
+    {
+        if (::g_bMultiMediaFeatureIsActive)
+        {
+            if (::g_pMultiMediaFeatureThreadWorkerHandle)
+            {
+                ::g_bMultiMediaFeatureShouldStopThreadWorker = true;
+                {
+                    ::WaitForSingleObject(::g_pMultiMediaFeatureThreadWorkerHandle, 750UL);
+                    {
+                        ::CloseHandle(::g_pMultiMediaFeatureThreadWorkerHandle);
+                        {
+                            ::g_pMultiMediaFeatureThreadWorkerHandle = nullptr;
+                            {
+                                ::g_bMultiMediaFeatureShouldStopThreadWorker = { };
+                                {
+                                    ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` CLOSED (OK)\n");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!::timeEndPeriod(::g_uiMultiMediaFeatureTimerResolution))
+            {
+                ::g_bMultiMediaFeatureIsActive = { };
+                {
+                    ::std::printf("[INFO] `::timeEndPeriod(%d);` OK\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
                 }
             }
 
             else
             {
-                ::std::printf("[WARN] `::timeGetDevCaps(...);` FAILED\n");
-            }
-        }
-    }
-}
-
-#endif
-
-#ifdef WIN32
-
-void MultiMediaFeatureTryDetach() noexcept
-{
-    if (::g_bMultiMediaFeatureIsActive)
-    {
-        if (::g_pMultiMediaFeatureThreadWorkerHandle)
-        {
-            ::g_bMultiMediaFeatureShouldStopThreadWorker = true;
-            {
-                ::WaitForSingleObject(::g_pMultiMediaFeatureThreadWorkerHandle, 750UL);
+                ::g_bMultiMediaFeatureIsActive = { };
                 {
-                    ::CloseHandle(::g_pMultiMediaFeatureThreadWorkerHandle);
-                    {
-                        ::g_pMultiMediaFeatureThreadWorkerHandle = nullptr;
-                        {
-                            ::g_bMultiMediaFeatureShouldStopThreadWorker = { };
-                            {
-                                ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` CLOSED (OK)\n");
-                            }
-                        }
-                    }
+                    ::std::printf("[WARN] `::timeEndPeriod(%d);` FAILED\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
                 }
             }
         }
-
-        if (!::timeEndPeriod(::g_uiMultiMediaFeatureTimerResolution))
-        {
-            ::g_bMultiMediaFeatureIsActive = { };
-            {
-                ::std::printf("[INFO] `::timeEndPeriod(%d);` OK\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
-            }
-        }
-
-        else
-        {
-            ::g_bMultiMediaFeatureIsActive = { };
-            {
-                ::std::printf("[WARN] `::timeEndPeriod(%d);` FAILED\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
-            }
-        }
     }
-}
 
 #endif
 
-int numUsersPlaying() noexcept
-{
-    static int nEntity{ }, nPlaying{ }, nTeam{ };
-
-    static ::edict_t* pEntity{ };
-
-    for (nPlaying = xTo(false, int), nEntity = xTo(true, int); nEntity <= ::gpGlobals->maxClients; nEntity++)
+    int numUsersPlaying(int nSkipThisEntityIndex) noexcept
     {
-        if (pEntity = ::INDEXENT(nEntity))
+        static int nEntity{ }, nPlaying{ }, nTeam{ };
+
+        static ::edict_t* pEntity{ };
+
+        for (nPlaying = xTo(false, int), nEntity = xTo(true, int); nEntity <= ::gpGlobals->maxClients; nEntity++)
         {
-            if (!pEntity->free)
+            if (nEntity != nSkipThisEntityIndex)
             {
-                if (pEntity->pvPrivateData)
+                if (pEntity = ::INDEXENT(nEntity))
                 {
-                    if (!pEntity->serialnumber)
+                    if (!pEntity->free)
                     {
-                        if (!(pEntity->v.flags & FL_DORMANT))
+                        if (pEntity->pvPrivateData)
                         {
-                            if (pEntity->v.flags & FL_CLIENT)
+                            if (!pEntity->serialnumber)
                             {
-                                if (!::g_strGameDir.compare("dod"))
+                                if (!(pEntity->v.flags & FL_DORMANT))
                                 {
-                                    if (((nTeam = *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs)) == ((int)('a'))) || (nTeam == ((int)('A'))))
+                                    if (pEntity->v.flags & FL_CLIENT)
                                     {
-                                        nPlaying++;
-                                    }
+                                        if (!::g_strGameDir.compare("dod"))
+                                        {
+                                            if (((nTeam = *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs)) == ((int)('a'))) || (nTeam == ((int)('A'))))
+                                            {
+                                                nPlaying++;
+                                            }
 
-                                    else if ((nTeam == ((int)('b'))) || (nTeam == ((int)('B'))))
-                                    {
-                                        nPlaying++;
-                                    }
-                                }
+                                            else if ((nTeam == ((int)('b'))) || (nTeam == ((int)('B'))))
+                                            {
+                                                nPlaying++;
+                                            }
+                                        }
 
-                                else
-                                {
-                                    if ((nTeam = *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs)) == 1)
-                                    {
-                                        nPlaying++;
-                                    }
+                                        else
+                                        {
+                                            if ((nTeam = *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs)) == 1)
+                                            {
+                                                nPlaying++;
+                                            }
 
-                                    else if (nTeam == 2)
-                                    {
-                                        nPlaying++;
+                                            else if (nTeam == 2)
+                                            {
+                                                nPlaying++;
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -10790,7 +11778,41 @@ int numUsersPlaying() noexcept
                 }
             }
         }
+
+        return nPlaying;
     }
 
-    return nPlaying;
-}
+    int numUsersConnected(int nSkipThisEntityIndex) noexcept
+    {
+        static int nEntity{ }, nConnected{ };
+
+        static ::edict_t* pEntity{ };
+
+        for (nConnected = xTo(false, int), nEntity = xTo(true, int); nEntity <= ::gpGlobals->maxClients; nEntity++)
+        {
+            if (nEntity != nSkipThisEntityIndex)
+            {
+                if (pEntity = ::INDEXENT(nEntity))
+                {
+                    if (!pEntity->free)
+                    {
+                        if (pEntity->pvPrivateData)
+                        {
+                            if (!pEntity->serialnumber)
+                            {
+                                if (!(pEntity->v.flags & FL_DORMANT))
+                                {
+                                    if (pEntity->v.flags & FL_CLIENT)
+                                    {
+                                        nConnected++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return nConnected;
+    }

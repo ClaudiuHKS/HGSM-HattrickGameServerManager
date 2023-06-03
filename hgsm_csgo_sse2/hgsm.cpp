@@ -3,8 +3,11 @@
 
 SH_DECL_HOOK0(IServerGameDLL, GetTickInterval, const, false, float);
 SH_DECL_HOOK3_void(IServerGameDLL, ServerActivate, SH_NOATTRIB, false, ::edict_t*, int, int);
+SH_DECL_HOOK6(IServerGameDLL, LevelInit, SH_NOATTRIB, false, bool, const char*, const char*, const char*, const char*, bool, bool);
+SH_DECL_HOOK0_void(IServerGameDLL, LevelShutdown, SH_NOATTRIB, false);
 SH_DECL_HOOK1_void(IServerGameDLL, GameFrame, SH_NOATTRIB, false, bool);
 
+SH_DECL_HOOK5(IServerGameClients, ClientConnect, SH_NOATTRIB, false, bool, ::edict_t*, const char*, const char*, char*, int);
 SH_DECL_HOOK2_void(IServerGameClients, ClientPutInServer, SH_NOATTRIB, false, ::edict_t*, const char*);
 SH_DECL_HOOK1_void(IServerGameClients, ClientDisconnect, SH_NOATTRIB, false, ::edict_t*);
 
@@ -78,6 +81,7 @@ bool g_bRealScore{ };
 bool g_bHideRadar{ };
 bool g_bZeroMoney{ };
 bool g_bRealScoreFriendly{ };
+bool g_bFriendlyDecrease{ };
 bool g_bFixScore{ };
 bool g_bFixKills{ };
 bool g_bFixDeaths{ };
@@ -119,6 +123,8 @@ int x_nDataMap{ 12, };
 #endif
 
 int x_nSendProp{ 16, };
+
+long long g_llMapChange{ };
 
 #ifdef WIN32
 
@@ -781,19 +787,25 @@ bool ::MySmmPlugin::Load(::PluginId pluginId, ::ISmmAPI* pSmmApi, char* pszError
     {
         {
             SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GetTickInterval, ::server, this, &::MySmmPlugin::Hook_GetTickInterval, { });
+            SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, ::server, this, &::MySmmPlugin::Hook_LevelInit, { });
+            SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, ::server, this, &::MySmmPlugin::Hook_LevelShutdown, { });
         }
 
         {
+            SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientConnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientConnect, { });
             SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientDisconnect, { });
         }
 
         {
             SH_ADD_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, ::server, this, &::MySmmPlugin::Hook_ServerActivate_Post, true);
+            SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, ::server, this, &::MySmmPlugin::Hook_LevelInit_Post, true);
+            SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, ::server, this, &::MySmmPlugin::Hook_LevelShutdown_Post, true);
             SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GameFrame, ::server, this, &::MySmmPlugin::Hook_GameFrame_Post, true);
             SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GetTickInterval, ::server, this, &::MySmmPlugin::Hook_GetTickInterval_Post, true);
         }
 
         {
+            SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientConnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientConnect_Post, true);
             SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, ::gameclients, this, &::MySmmPlugin::Hook_ClientPutInServer_Post, true);
             SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientDisconnect_Post, true);
         }
@@ -886,51 +898,66 @@ bool ::MySmmPlugin::Load(::PluginId pluginId, ::ISmmAPI* pSmmApi, char* pszError
 
     if (bLateLoaded)
     {
-        ::g_bNoReturn = true;
-
+        if (!::g_bNoReturn)
         {
-            Hook_GetTickInterval();
-            {
-                Hook_GetTickInterval_Post();
-            }
+            ::g_bNoReturn = true;
 
-            Hook_ServerActivate_Post(nullptr, { }, { });
-
-            for (nPlayer = xTo(true, int); nPlayer <= ::gpGlobals->maxClients; nPlayer++)
             {
+                Hook_GetTickInterval();
+                {
+                    Hook_GetTickInterval_Post();
+                }
+
+                Hook_ServerActivate_Post(nullptr, { }, { });
+                {
+                    Hook_LevelInit(nullptr, nullptr, nullptr, nullptr, { }, { });
+                    {
+                        Hook_LevelInit_Post(nullptr, nullptr, nullptr, nullptr, { }, { });
+                    }
+                }
+
+                for (nPlayer = xTo(true, int); nPlayer <= ::gpGlobals->maxClients; nPlayer++)
+                {
 
 #if SOURCE_ENGINE != SE_CSGO
 
-                if (pEdict = ::engine->PEntityOfEntIndex(nPlayer))
+                    if (pEdict = ::engine->PEntityOfEntIndex(nPlayer))
 
 #else
 
-                if (pEdict = ::gpGlobals->pEdicts + nPlayer)
+                    if (pEdict = ::gpGlobals->pEdicts + nPlayer)
 
 #endif
 
-                {
-                    if (!(pEdict->m_fStateFlags & FL_EDICT_FREE))
                     {
-                        if (!(pEdict->m_fStateFlags & FL_EDICT_DONTSEND))
+                        if (!(pEdict->m_fStateFlags & FL_EDICT_FREE))
                         {
-                            if (pEdict->m_NetworkSerialNumber)
+                            if (!(pEdict->m_fStateFlags & FL_EDICT_DONTSEND))
                             {
-                                if (pEdict->m_pNetworkable)
+                                if (pEdict->m_NetworkSerialNumber)
                                 {
-                                    if (pServerEntity = pEdict->GetIServerEntity())
+                                    if (pEdict->m_pNetworkable)
                                     {
-                                        if (pServerUnknown = pEdict->GetUnknown())
+                                        if (pServerEntity = pEdict->GetIServerEntity())
                                         {
-                                            if (pBaseEntity = pServerEntity->GetBaseEntity())
+                                            if (pServerUnknown = pEdict->GetUnknown())
                                             {
-                                                if (pPlayerInfo = ::playerinfomanager->GetPlayerInfo(pEdict))
+                                                if (pBaseEntity = pServerEntity->GetBaseEntity())
                                                 {
-                                                    if (pPlayerInfo->IsPlayer())
+                                                    if (pPlayerInfo = ::playerinfomanager->GetPlayerInfo(pEdict))
                                                     {
-                                                        if (pPlayerInfo->IsConnected())
+                                                        if (pPlayerInfo->IsPlayer())
                                                         {
-                                                            Hook_ClientPutInServer_Post(pEdict, pPlayerInfo->GetName());
+                                                            if (pPlayerInfo->IsConnected())
+                                                            {
+                                                                Hook_ClientConnect(pEdict, pPlayerInfo->GetName(), nullptr, nullptr, { });
+                                                                {
+                                                                    Hook_ClientConnect_Post(pEdict, pPlayerInfo->GetName(), nullptr, nullptr, { });
+                                                                    {
+                                                                        Hook_ClientPutInServer_Post(pEdict, pPlayerInfo->GetName());
+                                                                    }
+                                                                }
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -943,9 +970,9 @@ bool ::MySmmPlugin::Load(::PluginId pluginId, ::ISmmAPI* pSmmApi, char* pszError
                     }
                 }
             }
-        }
 
-        ::g_bNoReturn = { };
+            ::g_bNoReturn = { };
+        }
     }
 
 #ifdef WIN32
@@ -963,19 +990,25 @@ bool ::MySmmPlugin::Unload(char*, unsigned int) noexcept
     {
         {
             SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GetTickInterval, ::server, this, &::MySmmPlugin::Hook_GetTickInterval, { });
+            SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelInit, ::server, this, &::MySmmPlugin::Hook_LevelInit, { });
+            SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, ::server, this, &::MySmmPlugin::Hook_LevelShutdown, { });
         }
 
         {
+            SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientConnect, { });
             SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientDisconnect, { });
         }
 
         {
             SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, ::server, this, &::MySmmPlugin::Hook_ServerActivate_Post, true);
+            SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelInit, ::server, this, &::MySmmPlugin::Hook_LevelInit_Post, true);
+            SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, ::server, this, &::MySmmPlugin::Hook_LevelShutdown_Post, true);
             SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GameFrame, ::server, this, &::MySmmPlugin::Hook_GameFrame_Post, true);
             SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GetTickInterval, ::server, this, &::MySmmPlugin::Hook_GetTickInterval_Post, true);
         }
 
         {
+            SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientConnect_Post, true);
             SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, ::gameclients, this, &::MySmmPlugin::Hook_ClientPutInServer_Post, true);
             SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientDisconnect_Post, true);
         }
@@ -1011,19 +1044,25 @@ bool ::MySmmPlugin::Pause(char*, unsigned int) noexcept
     {
         {
             SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GetTickInterval, ::server, this, &::MySmmPlugin::Hook_GetTickInterval, { });
+            SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelInit, ::server, this, &::MySmmPlugin::Hook_LevelInit, { });
+            SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, ::server, this, &::MySmmPlugin::Hook_LevelShutdown, { });
         }
 
         {
+            SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientConnect, { });
             SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientDisconnect, { });
         }
 
         {
             SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, ::server, this, &::MySmmPlugin::Hook_ServerActivate_Post, true);
+            SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelInit, ::server, this, &::MySmmPlugin::Hook_LevelInit_Post, true);
+            SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, ::server, this, &::MySmmPlugin::Hook_LevelShutdown_Post, true);
             SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GameFrame, ::server, this, &::MySmmPlugin::Hook_GameFrame_Post, true);
             SH_REMOVE_HOOK_MEMFUNC(IServerGameDLL, GetTickInterval, ::server, this, &::MySmmPlugin::Hook_GetTickInterval_Post, true);
         }
 
         {
+            SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientConnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientConnect_Post, true);
             SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, ::gameclients, this, &::MySmmPlugin::Hook_ClientPutInServer_Post, true);
             SH_REMOVE_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientDisconnect_Post, true);
         }
@@ -1048,19 +1087,25 @@ bool ::MySmmPlugin::Unpause(char*, unsigned int) noexcept
     {
         {
             SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GetTickInterval, ::server, this, &::MySmmPlugin::Hook_GetTickInterval, { });
+            SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, ::server, this, &::MySmmPlugin::Hook_LevelInit, { });
+            SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, ::server, this, &::MySmmPlugin::Hook_LevelShutdown, { });
         }
 
         {
+            SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientConnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientConnect, { });
             SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientDisconnect, { });
         }
 
         {
             SH_ADD_HOOK_MEMFUNC(IServerGameDLL, ServerActivate, ::server, this, &::MySmmPlugin::Hook_ServerActivate_Post, true);
+            SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelInit, ::server, this, &::MySmmPlugin::Hook_LevelInit_Post, true);
+            SH_ADD_HOOK_MEMFUNC(IServerGameDLL, LevelShutdown, ::server, this, &::MySmmPlugin::Hook_LevelShutdown_Post, true);
             SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GameFrame, ::server, this, &::MySmmPlugin::Hook_GameFrame_Post, true);
             SH_ADD_HOOK_MEMFUNC(IServerGameDLL, GetTickInterval, ::server, this, &::MySmmPlugin::Hook_GetTickInterval_Post, true);
         }
 
         {
+            SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientConnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientConnect_Post, true);
             SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientPutInServer, ::gameclients, this, &::MySmmPlugin::Hook_ClientPutInServer_Post, true);
             SH_ADD_HOOK_MEMFUNC(IServerGameClients, ClientDisconnect, ::gameclients, this, &::MySmmPlugin::Hook_ClientDisconnect_Post, true);
         }
@@ -1312,6 +1357,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
             ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
             ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+            ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
             ::std::printf("'Give Armor In Spawn' Is Now '%d'\n", ::g_nArmor);
             ::std::printf("'Welcome Console 1' Is Now '%s'\n", ::g_strWelcome_1.c_str());
             ::std::printf("'Welcome Console 2' Is Now '%s'\n", ::g_strWelcome_2.c_str());
@@ -1369,6 +1415,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                     ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
                     ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                     ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+                    ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
                     ::std::printf("'Give Armor In Spawn' Is Now '%d'\n", ::g_nArmor);
                     ::std::printf("'Welcome Console 1' Is Now '%s'\n", ::g_strWelcome_1.c_str());
                     ::std::printf("'Welcome Console 2' Is Now '%s'\n", ::g_strWelcome_2.c_str());
@@ -1435,6 +1482,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                         ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
                         ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                         ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+                        ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
                         ::std::printf("'Give Armor In Spawn' Is Now '%d'\n", ::g_nArmor);
                         ::std::printf("'Welcome Console 1' Is Now '%s'\n", ::g_strWelcome_1.c_str());
                         ::std::printf("'Welcome Console 2' Is Now '%s'\n", ::g_strWelcome_2.c_str());
@@ -1491,6 +1539,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                             ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
                             ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                             ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+                            ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
                             ::std::printf("'Give Armor In Spawn' Is Now '%d'\n", ::g_nArmor);
                             ::std::printf("'Welcome Console 1' Is Now '%s'\n", ::g_strWelcome_1.c_str());
                             ::std::printf("'Welcome Console 2' Is Now '%s'\n", ::g_strWelcome_2.c_str());
@@ -1547,6 +1596,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                                 ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
                                 ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                                 ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+                                ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
                                 ::std::printf("'Give Armor In Spawn' Is Now '%d'\n", ::g_nArmor);
                                 ::std::printf("'Welcome Console 1' Is Now '%s'\n", ::g_strWelcome_1.c_str());
                                 ::std::printf("'Welcome Console 2' Is Now '%s'\n", ::g_strWelcome_2.c_str());
@@ -1781,6 +1831,24 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                             ::g_bRealScoreFriendly = jsTree["Real Score Friendly"].get < bool >();
                             {
                                 ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+                            }
+                        }
+
+                        if (jsTree["Friendly Decrease"].empty())
+                        {
+                            ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
+                        }
+
+                        else if (!jsTree["Friendly Decrease"].is_boolean())
+                        {
+                            ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
+                        }
+
+                        else
+                        {
+                            ::g_bFriendlyDecrease = jsTree["Friendly Decrease"].get < bool >();
+                            {
+                                ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
                             }
                         }
 
@@ -2392,14 +2460,284 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
 
     if (!::g_bNoReturn)
     {
+        if (::g_fIntervalPerTick)
+        {
+            do
+            {
+                ::g_SHPtr->SetRes(::MRES_SUPERCEDE);
+
+                return ::g_fIntervalPerTick;
+            }
+
+            while (false);
+        }
+
+        else
+        {
+            do
+            {
+                ::g_SHPtr->SetRes(::MRES_IGNORED);
+
+                if (::g_SHPtr->GetOrigRet())
+                {
+                    return (*(float*) ::g_SHPtr->GetOrigRet());
+                }
+
+                return { };
+            }
+
+            while (false);
+        }
+    }
+
+    else
+    {
+        return { };
+    }
+
+    return { };
+}
+
+bool ::MySmmPlugin::Hook_LevelInit(const char*, const char*, const char*, const char*, bool, bool) noexcept
+{
+    ::g_llMapChange = ::std::time(nullptr);
+
+    if (!::g_bNoReturn)
+    {
         do
         {
-            ::g_SHPtr->SetRes(::g_fIntervalPerTick ? ::MRES_SUPERCEDE : ::MRES_IGNORED);
+            ::g_SHPtr->SetRes(::MRES_IGNORED);
 
-            return ::g_fIntervalPerTick;
+            if (::g_SHPtr->GetOrigRet())
+            {
+                return (*(bool*) ::g_SHPtr->GetOrigRet());
+            }
+
+            return { };
         }
 
         while (false);
+    }
+
+    else
+    {
+        return { };
+    }
+
+    return { };
+}
+
+void ::MySmmPlugin::Hook_LevelShutdown() noexcept
+{
+    static int nPlayer{ };
+
+    static ::edict_t* pEdict{ };
+    static ::CBaseEntity* pBaseEntity{ };
+    static ::IServerUnknown* pServerUnknown{ };
+    static ::IServerEntity* pServerEntity{ };
+    static ::IPlayerInfo* pPlayerInfo{ };
+
+    ::g_llMapChange = ::std::time(nullptr);
+
+    if (!::g_bNoReturn)
+    {
+        ::g_bNoReturn = true;
+
+        {
+            for (nPlayer = xTo(true, int); nPlayer <= ::gpGlobals->maxClients; nPlayer++)
+            {
+
+#if SOURCE_ENGINE != SE_CSGO
+
+                if (pEdict = ::engine->PEntityOfEntIndex(nPlayer))
+
+#else
+
+                if (pEdict = ::gpGlobals->pEdicts + nPlayer)
+
+#endif
+
+                {
+                    if (!(pEdict->m_fStateFlags & FL_EDICT_FREE))
+                    {
+                        if (!(pEdict->m_fStateFlags & FL_EDICT_DONTSEND))
+                        {
+                            if (pEdict->m_NetworkSerialNumber)
+                            {
+                                if (pEdict->m_pNetworkable)
+                                {
+                                    if (pServerEntity = pEdict->GetIServerEntity())
+                                    {
+                                        if (pServerUnknown = pEdict->GetUnknown())
+                                        {
+                                            if (pBaseEntity = pServerEntity->GetBaseEntity())
+                                            {
+                                                if (pPlayerInfo = ::playerinfomanager->GetPlayerInfo(pEdict))
+                                                {
+                                                    if (pPlayerInfo->IsPlayer())
+                                                    {
+                                                        Hook_ClientDisconnect(pEdict);
+                                                        {
+                                                            Hook_ClientDisconnect_Post(pEdict);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ::g_bNoReturn = { };
+    }
+
+    if (!::g_bNoReturn)
+    {
+        do
+        {
+            ::g_SHPtr->SetRes(::MRES_IGNORED);
+
+            return;
+        }
+
+        while (false);
+    }
+
+    else
+    {
+        return;
+    }
+}
+
+bool ::MySmmPlugin::Hook_ClientConnect(::edict_t* pEdict, const char*, const char*, char*, int) noexcept
+{
+    static int nPlayer{ };
+
+#if SOURCE_ENGINE != SE_CSGO
+
+    static long long llNow{ };
+
+    static ::std::string strCmd{ };
+
+#endif
+
+    if (pEdict)
+    {
+
+#if SOURCE_ENGINE != SE_CSGO
+
+        if ((nPlayer = ::engine->IndexOfEdict(pEdict)) > 0)
+
+#else
+
+        if ((nPlayer = pEdict - ::gpGlobals->pEdicts) > 0)
+
+#endif
+
+        {
+            if (::g_nArmor)
+            {
+                ::g_bArmor[nPlayer] = { };
+            }
+
+            if (::g_bRealScore)
+            {
+                ::g_nDeaths[nPlayer] = { };
+                {
+                    ::g_nKills[nPlayer] = { };
+                }
+            }
+
+            if (!::g_strWelcome_1.empty())
+            {
+                if (::g_strWelcome_1.length() <= 190)
+                {
+                    if (::g_strWelcome_1.size() <= 190)
+                    {
+                        if (::g_nTextMsg > 0)
+                        {
+                            ::g_bShow[nPlayer] = { };
+                        }
+                    }
+                }
+            }
+
+#if SOURCE_ENGINE != SE_CSGO
+
+            if (::gpGlobals->mapname.ToCStr())
+            {
+                if (::g_llMapChange)
+                {
+                    if (!::numUsersConnected(nPlayer))
+                    {
+                        if (((llNow = ::std::time(nullptr)) - ::g_llMapChange) >= 60)
+                        {
+                            strCmd.assign("changelevel");
+                            {
+                                strCmd.append(" ");
+                                {
+                                    strCmd.append("\"");
+                                    {
+                                        strCmd.append(::gpGlobals->mapname.ToCStr());
+                                        {
+                                            strCmd.append("\"");
+                                            {
+                                                strCmd.append("\n");
+                                                {
+                                                    strCmd.shrink_to_fit();
+                                                    {
+                                                        ::engine->ServerCommand(strCmd.c_str());
+                                                        {
+                                                            strCmd.clear();
+                                                            {
+                                                                strCmd.shrink_to_fit();
+                                                                {
+                                                                    ::g_llMapChange = llNow;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+#endif
+
+        }
+    }
+
+    if (!::g_bNoReturn)
+    {
+        do
+        {
+            ::g_SHPtr->SetRes(::MRES_IGNORED);
+
+            if (::g_SHPtr->GetOrigRet())
+            {
+                return (*(bool*) ::g_SHPtr->GetOrigRet());
+            }
+
+            return { };
+        }
+
+        while (false);
+    }
+
+    else
+    {
+        return { };
     }
 
     return { };
@@ -2427,17 +2765,47 @@ void ::MySmmPlugin::Hook_ClientDisconnect(::edict_t* pEdict) noexcept
             {
                 ::g_bArmor[nPlayer] = { };
             }
+
+            if (::g_bRealScore)
+            {
+                ::g_nDeaths[nPlayer] = { };
+                {
+                    ::g_nKills[nPlayer] = { };
+                }
+            }
+
+            if (!::g_strWelcome_1.empty())
+            {
+                if (::g_strWelcome_1.length() <= 190)
+                {
+                    if (::g_strWelcome_1.size() <= 190)
+                    {
+                        if (::g_nTextMsg > 0)
+                        {
+                            ::g_bShow[nPlayer] = { };
+                        }
+                    }
+                }
+            }
         }
     }
 
-    do
+    if (!::g_bNoReturn)
     {
-        ::g_SHPtr->SetRes(::MRES_IGNORED);
+        do
+        {
+            ::g_SHPtr->SetRes(::MRES_IGNORED);
 
-        return;
+            return;
+        }
+
+        while (false);
     }
 
-    while (false);
+    else
+    {
+        return;
+    }
 }
 
 void ::MySmmPlugin::Hook_ServerActivate_Post(::edict_t*, int, int) noexcept
@@ -2494,6 +2862,8 @@ void ::MySmmPlugin::Hook_ServerActivate_Post(::edict_t*, int, int) noexcept
     static bool bHasMin{ }, bHasMax{ }, bFlags{ }, bMsgs{ };
     static const char* pszVal{ }, * pszHelp{ }, * pszDef{ };
     static char szBuffer[2048]{ }, szTrimmed[2048]{ }, szSys[256]{ };
+
+    ::g_llMapChange = ::std::time(nullptr);
 
 #if SOURCE_ENGINE == SE_CSGO
 
@@ -3892,12 +4262,133 @@ void ::MySmmPlugin::Hook_ServerActivate_Post(::edict_t*, int, int) noexcept
 
         while (false);
     }
+
+    else
+    {
+        return;
+    }
+}
+
+bool ::MySmmPlugin::Hook_LevelInit_Post(const char*, const char*, const char*, const char*, bool, bool) noexcept
+{
+    ::g_llMapChange = ::std::time(nullptr);
+
+    if (!::g_bNoReturn)
+    {
+        do
+        {
+            ::g_SHPtr->SetRes(::MRES_IGNORED);
+
+            if (::g_SHPtr->GetOrigRet())
+            {
+                return (*(bool*) ::g_SHPtr->GetOrigRet());
+            }
+
+            return { };
+        }
+
+        while (false);
+    }
+
+    else
+    {
+        return { };
+    }
+
+    return { };
+}
+
+void ::MySmmPlugin::Hook_LevelShutdown_Post() noexcept
+{
+    static int nPlayer{ };
+
+    static ::edict_t* pEdict{ };
+    static ::CBaseEntity* pBaseEntity{ };
+    static ::IServerUnknown* pServerUnknown{ };
+    static ::IServerEntity* pServerEntity{ };
+    static ::IPlayerInfo* pPlayerInfo{ };
+
+    ::g_llMapChange = ::std::time(nullptr);
+
+    if (!::g_bNoReturn)
+    {
+        ::g_bNoReturn = true;
+
+        {
+            for (nPlayer = xTo(true, int); nPlayer <= ::gpGlobals->maxClients; nPlayer++)
+            {
+
+#if SOURCE_ENGINE != SE_CSGO
+
+                if (pEdict = ::engine->PEntityOfEntIndex(nPlayer))
+
+#else
+
+                if (pEdict = ::gpGlobals->pEdicts + nPlayer)
+
+#endif
+
+                {
+                    if (!(pEdict->m_fStateFlags & FL_EDICT_FREE))
+                    {
+                        if (!(pEdict->m_fStateFlags & FL_EDICT_DONTSEND))
+                        {
+                            if (pEdict->m_NetworkSerialNumber)
+                            {
+                                if (pEdict->m_pNetworkable)
+                                {
+                                    if (pServerEntity = pEdict->GetIServerEntity())
+                                    {
+                                        if (pServerUnknown = pEdict->GetUnknown())
+                                        {
+                                            if (pBaseEntity = pServerEntity->GetBaseEntity())
+                                            {
+                                                if (pPlayerInfo = ::playerinfomanager->GetPlayerInfo(pEdict))
+                                                {
+                                                    if (pPlayerInfo->IsPlayer())
+                                                    {
+                                                        Hook_ClientDisconnect(pEdict);
+                                                        {
+                                                            Hook_ClientDisconnect_Post(pEdict);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ::g_bNoReturn = { };
+    }
+
+    if (!::g_bNoReturn)
+    {
+        do
+        {
+            ::g_SHPtr->SetRes(::MRES_IGNORED);
+
+            return;
+        }
+
+        while (false);
+    }
+
+    else
+    {
+        return;
+    }
 }
 
 void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
 {
     static bool bOffs{ }, bUpdate{ }, bMsgs{ };
-    static int nPlayer{ }, nIter{ }, nHealth{ };
+    static int nPlayer{ }, nIter{ }, nHealth{ }, nFrags{ };
     static const char* pszServerClassName{ };
     static long long llTime{ }, llStamp{ };
 
@@ -4135,6 +4626,9 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
                                                                         if (*(signed int*)((unsigned char*)pBaseEntity + ::m_iFrags))
                                                                         {
                                                                             *(signed int*)((unsigned char*)pBaseEntity + ::m_iFrags) = { };
+                                                                            {
+                                                                                ::g_nKills[nPlayer] = { };
+                                                                            }
                                                                         }
                                                                     }
 
@@ -4143,6 +4637,9 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
                                                                         if (*(signed short*)((unsigned char*)pBaseEntity + ::m_iFrags))
                                                                         {
                                                                             *(signed short*)((unsigned char*)pBaseEntity + ::m_iFrags) = { };
+                                                                            {
+                                                                                ::g_nKills[nPlayer] = { };
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -4159,6 +4656,9 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
                                                                             if (*(signed int*)((unsigned char*)pBaseEntity + ::m_iDeaths))
                                                                             {
                                                                                 *(signed int*)((unsigned char*)pBaseEntity + ::m_iDeaths) = { };
+                                                                                {
+                                                                                    ::g_nDeaths[nPlayer] = { };
+                                                                                }
                                                                             }
                                                                         }
 
@@ -4167,6 +4667,34 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
                                                                             if (*(signed short*)((unsigned char*)pBaseEntity + ::m_iDeaths))
                                                                             {
                                                                                 *(signed short*)((unsigned char*)pBaseEntity + ::m_iDeaths) = { };
+                                                                                {
+                                                                                    ::g_nDeaths[nPlayer] = { };
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (pPlayerInfo->GetDeathCount() > (nFrags = pPlayerInfo->GetFragCount()))
+                                                                {
+                                                                    if (::m_iDeathsSize >= 17)
+                                                                    {
+                                                                        if (*(signed int*)((unsigned char*)pBaseEntity + ::m_iDeaths))
+                                                                        {
+                                                                            *(signed int*)((unsigned char*)pBaseEntity + ::m_iDeaths) = (::std::max)(xTo(false, int), nFrags);
+                                                                            {
+                                                                                ::g_nDeaths[nPlayer] = (::std::max)(xTo(false, int), nFrags);
+                                                                            }
+                                                                        }
+                                                                    }
+
+                                                                    else
+                                                                    {
+                                                                        if (*(signed short*)((unsigned char*)pBaseEntity + ::m_iDeaths))
+                                                                        {
+                                                                            *(signed short*)((unsigned char*)pBaseEntity + ::m_iDeaths) = (::std::max)(xTo(false, int), nFrags);
+                                                                            {
+                                                                                ::g_nDeaths[nPlayer] = (::std::max)(xTo(false, int), nFrags);
                                                                             }
                                                                         }
                                                                     }
@@ -4185,6 +4713,9 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
                                                                         if (*(signed int*)((unsigned char*)pBaseEntity + ::m_iFrags))
                                                                         {
                                                                             *(signed int*)((unsigned char*)pBaseEntity + ::m_iFrags) = { };
+                                                                            {
+                                                                                ::g_nKills[nPlayer] = { };
+                                                                            }
                                                                         }
                                                                     }
 
@@ -4193,6 +4724,9 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
                                                                         if (*(signed short*)((unsigned char*)pBaseEntity + ::m_iFrags))
                                                                         {
                                                                             *(signed short*)((unsigned char*)pBaseEntity + ::m_iFrags) = { };
+                                                                            {
+                                                                                ::g_nKills[nPlayer] = { };
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -4212,6 +4746,9 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
                                                                             if (*(signed int*)((unsigned char*)pBaseEntity + ::m_iDeaths))
                                                                             {
                                                                                 *(signed int*)((unsigned char*)pBaseEntity + ::m_iDeaths) = { };
+                                                                                {
+                                                                                    ::g_nDeaths[nPlayer] = { };
+                                                                                }
                                                                             }
                                                                         }
 
@@ -4220,6 +4757,34 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
                                                                             if (*(signed short*)((unsigned char*)pBaseEntity + ::m_iDeaths))
                                                                             {
                                                                                 *(signed short*)((unsigned char*)pBaseEntity + ::m_iDeaths) = { };
+                                                                                {
+                                                                                    ::g_nDeaths[nPlayer] = { };
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (pPlayerInfo->GetDeathCount() > (nFrags = pPlayerInfo->GetFragCount()))
+                                                                {
+                                                                    if (::m_iDeathsSize >= 17)
+                                                                    {
+                                                                        if (*(signed int*)((unsigned char*)pBaseEntity + ::m_iDeaths))
+                                                                        {
+                                                                            *(signed int*)((unsigned char*)pBaseEntity + ::m_iDeaths) = (::std::max)(xTo(false, int), nFrags);
+                                                                            {
+                                                                                ::g_nDeaths[nPlayer] = (::std::max)(xTo(false, int), nFrags);
+                                                                            }
+                                                                        }
+                                                                    }
+
+                                                                    else
+                                                                    {
+                                                                        if (*(signed short*)((unsigned char*)pBaseEntity + ::m_iDeaths))
+                                                                        {
+                                                                            *(signed short*)((unsigned char*)pBaseEntity + ::m_iDeaths) = (::std::max)(xTo(false, int), nFrags);
+                                                                            {
+                                                                                ::g_nDeaths[nPlayer] = (::std::max)(xTo(false, int), nFrags);
                                                                             }
                                                                         }
                                                                     }
@@ -5551,28 +6116,133 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
         nIter = { };
     }
 
-    do
+    if (!::g_bNoReturn)
     {
-        ::g_SHPtr->SetRes(::MRES_IGNORED);
+        do
+        {
+            ::g_SHPtr->SetRes(::MRES_IGNORED);
 
-        return;
+            return;
+        }
+
+        while (false);
     }
 
-    while (false);
+    else
+    {
+        return;
+    }
 }
 
 float ::MySmmPlugin::Hook_GetTickInterval_Post() const noexcept
 {
     if (!::g_bNoReturn)
     {
+        if (::g_fIntervalPerTick)
+        {
+            do
+            {
+                ::g_SHPtr->SetRes(::MRES_SUPERCEDE);
+
+                return ::g_fIntervalPerTick;
+            }
+
+            while (false);
+        }
+
+        else
+        {
+            do
+            {
+                ::g_SHPtr->SetRes(::MRES_IGNORED);
+
+                if (::g_SHPtr->GetOrigRet())
+                {
+                    return (*(float*) ::g_SHPtr->GetOrigRet());
+                }
+
+                return { };
+            }
+
+            while (false);
+        }
+    }
+
+    else
+    {
+        return { };
+    }
+
+    return { };
+}
+
+bool ::MySmmPlugin::Hook_ClientConnect_Post(::edict_t* pEdict, const char*, const char*, char*, int) noexcept
+{
+    static int nPlayer{ };
+
+    if (pEdict)
+    {
+
+#if SOURCE_ENGINE != SE_CSGO
+
+        if ((nPlayer = ::engine->IndexOfEdict(pEdict)) > 0)
+
+#else
+
+        if ((nPlayer = pEdict - ::gpGlobals->pEdicts) > 0)
+
+#endif
+
+        {
+            if (::g_nArmor)
+            {
+                ::g_bArmor[nPlayer] = { };
+            }
+
+            if (::g_bRealScore)
+            {
+                ::g_nDeaths[nPlayer] = { };
+                {
+                    ::g_nKills[nPlayer] = { };
+                }
+            }
+
+            if (!::g_strWelcome_1.empty())
+            {
+                if (::g_strWelcome_1.length() <= 190)
+                {
+                    if (::g_strWelcome_1.size() <= 190)
+                    {
+                        if (::g_nTextMsg > 0)
+                        {
+                            ::g_bShow[nPlayer] = { };
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (!::g_bNoReturn)
+    {
         do
         {
-            ::g_SHPtr->SetRes(::g_fIntervalPerTick ? ::MRES_SUPERCEDE : ::MRES_IGNORED);
+            ::g_SHPtr->SetRes(::MRES_IGNORED);
 
-            return ::g_fIntervalPerTick;
+            if (::g_SHPtr->GetOrigRet())
+            {
+                return (*(bool*) ::g_SHPtr->GetOrigRet());
+            }
+
+            return { };
         }
 
         while (false);
+    }
+
+    else
+    {
+        return { };
     }
 
     return { };
@@ -5636,6 +6306,11 @@ void ::MySmmPlugin::Hook_ClientPutInServer_Post(::edict_t* pEdict, const char*) 
 
         while (false);
     }
+
+    else
+    {
+        return;
+    }
 }
 
 void ::MySmmPlugin::Hook_ClientDisconnect_Post(::edict_t* pEdict) noexcept
@@ -5685,14 +6360,22 @@ void ::MySmmPlugin::Hook_ClientDisconnect_Post(::edict_t* pEdict) noexcept
         }
     }
 
-    do
+    if (!::g_bNoReturn)
     {
-        ::g_SHPtr->SetRes(::MRES_IGNORED);
+        do
+        {
+            ::g_SHPtr->SetRes(::MRES_IGNORED);
 
-        return;
+            return;
+        }
+
+        while (false);
     }
 
-    while (false);
+    else
+    {
+        return;
+    }
 }
 
 const char* ::MySmmPlugin::GetAuthor() noexcept
@@ -5988,11 +6671,17 @@ void ::MySmmPlugin::FireGameEvent(::IGameEvent* pGameEvent) noexcept
                                                                                                 {
                                                                                                     if ((nUserIdActual = pPlayerInfo->GetUserID()) == nUserId)
                                                                                                     {
-                                                                                                        ::g_nDeaths[nPlayer] ++;
+                                                                                                        ::g_nDeaths[nPlayer]++;
                                                                                                         {
                                                                                                             bValidVictim = true;
                                                                                                             {
                                                                                                                 pPlayerInfoVictim = pPlayerInfo;
+                                                                                                                {
+                                                                                                                    if (::g_bFixDeaths || ::g_bFixScore)
+                                                                                                                    {
+                                                                                                                        ::g_nDeaths[nPlayer] = ::ValClamp(::g_nDeaths[nPlayer], xTo(false, int), ::g_nKills[nPlayer]);
+                                                                                                                    }
+                                                                                                                }
                                                                                                             }
                                                                                                         }
                                                                                                     }
@@ -6001,7 +6690,7 @@ void ::MySmmPlugin::FireGameEvent(::IGameEvent* pGameEvent) noexcept
                                                                                                     {
                                                                                                         if (nUserIdActual == nUserIdAttacker)
                                                                                                         {
-                                                                                                            ::g_nKills[nPlayer] ++;
+                                                                                                            ::g_nKills[nPlayer]++;
                                                                                                             {
                                                                                                                 bValidAttacker = true;
                                                                                                                 {
@@ -6043,7 +6732,13 @@ void ::MySmmPlugin::FireGameEvent(::IGameEvent* pGameEvent) noexcept
                                                                         {
                                                                             if (pPlayerInfoAttacker->GetTeamIndex() == pPlayerInfoVictim->GetTeamIndex())
                                                                             {
-                                                                                ::g_nKills[nAttacker] --;
+                                                                                ::g_nKills[nAttacker]--;
+                                                                                {
+                                                                                    if (::g_bFriendlyDecrease)
+                                                                                    {
+                                                                                        --::g_nKills[nAttacker];
+                                                                                    }
+                                                                                }
                                                                             }
                                                                         }
                                                                     }
@@ -7018,254 +7713,260 @@ void* operator new(unsigned int uMem)
 }
 
 void* operator new [](unsigned int uMem)
-{
-    return ::malloc(uMem);
-}
-
-void operator delete(void* pMem)
-{
-    ::free(pMem);
-}
-
-void operator delete [](void* pMem)
-{
-    ::free(pMem);
-}
-
-#endif
-
-::IChangeInfoAccessor* ::CBaseEdict::GetChangeAccessor()
-{
-    return ::engine->GetChangeAccessor(((const ::edict_t*)(this)));
-}
-
-#ifdef WIN32
-
-bool g_bMultiMediaFeatureIsActive{ };
-bool g_bMultiMediaFeatureShouldStopThreadWorker{ };
-
-unsigned int g_uiMultiMediaFeatureTimerResolution{ };
-unsigned int g_uiMultiMediaFeatureMinPeriodAvail{ };
-
-void* g_pMultiMediaFeatureThreadWorkerHandle{ };
-
-#endif
-
-#ifdef WIN32
-
-unsigned long __stdcall MultiMediaFeatureThreadWorkerFunction(void* pMultiMediaFeatureThreadWorkerData) noexcept
-{
-    static long long llTimeNow{ }, llTimeStamp{ };
-
-    static ::mmtime_tag multiMediaTime{ };
-
-    while (!::g_bMultiMediaFeatureShouldStopThreadWorker)
     {
-        llTimeNow = ::std::time(nullptr);
+        return ::malloc(uMem);
+    }
+
+    void operator delete(void* pMem)
+    {
+        ::free(pMem);
+    }
+
+    void operator delete [](void* pMem)
         {
-            if ((llTimeNow - llTimeStamp) > ((long long)(5I8)))
+            ::free(pMem);
+        }
+
+#endif
+
+        ::IChangeInfoAccessor* ::CBaseEdict::GetChangeAccessor()
+        {
+            return ::engine->GetChangeAccessor(((const ::edict_t*)(this)));
+        }
+
+#ifdef WIN32
+
+        bool g_bMultiMediaFeatureIsActive{ };
+        bool g_bMultiMediaFeatureShouldStopThreadWorker{ };
+
+        unsigned int g_uiMultiMediaFeatureTimerResolution{ };
+        unsigned int g_uiMultiMediaFeatureMinPeriodAvail{ };
+
+        void* g_pMultiMediaFeatureThreadWorkerHandle{ };
+
+#endif
+
+#ifdef WIN32
+
+        unsigned long __stdcall MultiMediaFeatureThreadWorkerFunction(void* pMultiMediaFeatureThreadWorkerData) noexcept
+        {
+            static long long llTimeNow{ }, llTimeStamp{ };
+
+            static ::mmtime_tag multiMediaTime{ };
+
+            while (!::g_bMultiMediaFeatureShouldStopThreadWorker)
             {
-                llTimeStamp = llTimeNow;
+                llTimeNow = ::std::time(nullptr);
                 {
-                    if (!::timeGetSystemTime(&multiMediaTime, sizeof multiMediaTime))
+                    if ((llTimeNow - llTimeStamp) > ((long long)(5I8)))
                     {
-                        ::timeGetTime();
+                        llTimeStamp = llTimeNow;
+                        {
+                            if (!::timeGetSystemTime(&multiMediaTime, sizeof multiMediaTime))
+                            {
+                                ::timeGetTime();
+                            }
+
+                            else
+                            {
+                                ::timeGetTime();
+                            }
+                        }
+                    }
+                }
+
+                ::Sleep(((unsigned long)(100I8)));
+            }
+
+            return { };
+        }
+
+#endif
+
+#ifdef WIN32
+
+        void MultiMediaFeatureTryAttach() noexcept
+        {
+            ::timecaps_tag timeCaps{ };
+            {
+                ::mmtime_tag multiMediaTime{ };
+                {
+                    if (!::timeGetDevCaps(&timeCaps, sizeof timeCaps))
+                    {
+                        ::g_uiMultiMediaFeatureMinPeriodAvail = ((::std::max)(((unsigned int)(timeCaps.wPeriodMin)), ((unsigned int)(1I8))));
+                        {
+                            ::g_uiMultiMediaFeatureTimerResolution = ((::std::min)(((unsigned int)(::g_uiMultiMediaFeatureMinPeriodAvail)), ((unsigned int)(timeCaps.wPeriodMax))));
+                            {
+                                if (!::timeBeginPeriod(::g_uiMultiMediaFeatureTimerResolution))
+                                {
+                                    ::g_bMultiMediaFeatureIsActive = true;
+                                    {
+                                        ::std::printf("[INFO] `::timeBeginPeriod(%d);` OK\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
+                                        {
+                                            if (!::timeGetSystemTime(&multiMediaTime, sizeof multiMediaTime))
+                                            {
+                                                ::timeGetTime();
+                                                {
+                                                    ::std::printf("[INFO] `::timeGetSystemTime(...);` OK & `::timeGetTime();` OK\n");
+                                                    {
+                                                        ::g_pMultiMediaFeatureThreadWorkerHandle = ::CreateThread(nullptr, { }, ::MultiMediaFeatureThreadWorkerFunction, nullptr, { }, nullptr);
+                                                        {
+                                                            if (::g_pMultiMediaFeatureThreadWorkerHandle)
+                                                            {
+                                                                ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` OK\n");
+                                                            }
+
+                                                            else
+                                                            {
+                                                                ::std::printf("[WARN] `::MultiMediaFeatureThreadWorkerFunction(...);` FAILED\n");
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            else
+                                            {
+                                                ::timeGetTime();
+                                                {
+                                                    ::std::printf("[WARN] `::timeGetSystemTime(...);` FAILED & `::timeGetTime();` OK\n");
+                                                    {
+                                                        ::g_pMultiMediaFeatureThreadWorkerHandle = ::CreateThread(nullptr, { }, ::MultiMediaFeatureThreadWorkerFunction, nullptr, { }, nullptr);
+                                                        {
+                                                            if (::g_pMultiMediaFeatureThreadWorkerHandle)
+                                                            {
+                                                                ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` OK\n");
+                                                            }
+
+                                                            else
+                                                            {
+                                                                ::std::printf("[WARN] `::MultiMediaFeatureThreadWorkerFunction(...);` FAILED\n");
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                else
+                                {
+                                    ::std::printf("[WARN] `::timeBeginPeriod(%d);` FAILED\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
+                                }
+                            }
+                        }
                     }
 
                     else
                     {
-                        ::timeGetTime();
+                        ::std::printf("[WARN] `::timeGetDevCaps(...);` FAILED\n");
                     }
                 }
             }
         }
 
-        ::Sleep(((unsigned long)(100I8)));
-    }
-
-    return { };
-}
-
 #endif
 
 #ifdef WIN32
 
-void MultiMediaFeatureTryAttach() noexcept
-{
-    ::timecaps_tag timeCaps{ };
-    {
-        ::mmtime_tag multiMediaTime{ };
+        void MultiMediaFeatureTryDetach() noexcept
         {
-            if (!::timeGetDevCaps(&timeCaps, sizeof timeCaps))
+            if (::g_bMultiMediaFeatureIsActive)
             {
-                ::g_uiMultiMediaFeatureMinPeriodAvail = ((::std::max)(((unsigned int)(timeCaps.wPeriodMin)), ((unsigned int)(1I8))));
+                if (::g_pMultiMediaFeatureThreadWorkerHandle)
                 {
-                    ::g_uiMultiMediaFeatureTimerResolution = ((::std::min)(((unsigned int)(::g_uiMultiMediaFeatureMinPeriodAvail)), ((unsigned int)(timeCaps.wPeriodMax))));
+                    ::g_bMultiMediaFeatureShouldStopThreadWorker = true;
                     {
-                        if (!::timeBeginPeriod(::g_uiMultiMediaFeatureTimerResolution))
+                        ::WaitForSingleObject(::g_pMultiMediaFeatureThreadWorkerHandle, 750UL);
                         {
-                            ::g_bMultiMediaFeatureIsActive = true;
+                            ::CloseHandle(::g_pMultiMediaFeatureThreadWorkerHandle);
                             {
-                                ::std::printf("[INFO] `::timeBeginPeriod(%d);` OK\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
+                                ::g_pMultiMediaFeatureThreadWorkerHandle = nullptr;
                                 {
-                                    if (!::timeGetSystemTime(&multiMediaTime, sizeof multiMediaTime))
+                                    ::g_bMultiMediaFeatureShouldStopThreadWorker = { };
                                     {
-                                        ::timeGetTime();
-                                        {
-                                            ::std::printf("[INFO] `::timeGetSystemTime(...);` OK & `::timeGetTime();` OK\n");
-                                            {
-                                                ::g_pMultiMediaFeatureThreadWorkerHandle = ::CreateThread(nullptr, { }, ::MultiMediaFeatureThreadWorkerFunction, nullptr, { }, nullptr);
-                                                {
-                                                    if (::g_pMultiMediaFeatureThreadWorkerHandle)
-                                                    {
-                                                        ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` OK\n");
-                                                    }
-
-                                                    else
-                                                    {
-                                                        ::std::printf("[WARN] `::MultiMediaFeatureThreadWorkerFunction(...);` FAILED\n");
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    else
-                                    {
-                                        ::timeGetTime();
-                                        {
-                                            ::std::printf("[WARN] `::timeGetSystemTime(...);` FAILED & `::timeGetTime();` OK\n");
-                                            {
-                                                ::g_pMultiMediaFeatureThreadWorkerHandle = ::CreateThread(nullptr, { }, ::MultiMediaFeatureThreadWorkerFunction, nullptr, { }, nullptr);
-                                                {
-                                                    if (::g_pMultiMediaFeatureThreadWorkerHandle)
-                                                    {
-                                                        ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` OK\n");
-                                                    }
-
-                                                    else
-                                                    {
-                                                        ::std::printf("[WARN] `::MultiMediaFeatureThreadWorkerFunction(...);` FAILED\n");
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` CLOSED (OK)\n");
                                     }
                                 }
                             }
                         }
-
-                        else
-                        {
-                            ::std::printf("[WARN] `::timeBeginPeriod(%d);` FAILED\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
-                        }
                     }
                 }
-            }
 
-            else
-            {
-                ::std::printf("[WARN] `::timeGetDevCaps(...);` FAILED\n");
-            }
-        }
-    }
-}
-
-#endif
-
-#ifdef WIN32
-
-void MultiMediaFeatureTryDetach() noexcept
-{
-    if (::g_bMultiMediaFeatureIsActive)
-    {
-        if (::g_pMultiMediaFeatureThreadWorkerHandle)
-        {
-            ::g_bMultiMediaFeatureShouldStopThreadWorker = true;
-            {
-                ::WaitForSingleObject(::g_pMultiMediaFeatureThreadWorkerHandle, 750UL);
+                if (!::timeEndPeriod(::g_uiMultiMediaFeatureTimerResolution))
                 {
-                    ::CloseHandle(::g_pMultiMediaFeatureThreadWorkerHandle);
+                    ::g_bMultiMediaFeatureIsActive = { };
                     {
-                        ::g_pMultiMediaFeatureThreadWorkerHandle = nullptr;
-                        {
-                            ::g_bMultiMediaFeatureShouldStopThreadWorker = { };
-                            {
-                                ::std::printf("[INFO] `::MultiMediaFeatureThreadWorkerFunction(...);` CLOSED (OK)\n");
-                            }
-                        }
+                        ::std::printf("[INFO] `::timeEndPeriod(%d);` OK\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
+                    }
+                }
+
+                else
+                {
+                    ::g_bMultiMediaFeatureIsActive = { };
+                    {
+                        ::std::printf("[WARN] `::timeEndPeriod(%d);` FAILED\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
                     }
                 }
             }
         }
 
-        if (!::timeEndPeriod(::g_uiMultiMediaFeatureTimerResolution))
-        {
-            ::g_bMultiMediaFeatureIsActive = { };
-            {
-                ::std::printf("[INFO] `::timeEndPeriod(%d);` OK\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
-            }
-        }
-
-        else
-        {
-            ::g_bMultiMediaFeatureIsActive = { };
-            {
-                ::std::printf("[WARN] `::timeEndPeriod(%d);` FAILED\n", ((int)(::g_uiMultiMediaFeatureTimerResolution)));
-            }
-        }
-    }
-}
-
 #endif
 
-int numUsersPlaying() noexcept
-{
-    static int nPlayer{ }, nPlaying{ };
+        int numUsersPlaying(int nSkipThisEntityIndex) noexcept
+        {
+            static int nPlayer{ }, nPlaying{ };
 
-    static ::edict_t* pEdict{ };
-    static ::CBaseEntity* pBaseEntity{ };
-    static ::IPlayerInfo* pPlayerInfo{ };
-    static ::IServerUnknown* pServerUnknown{ };
-    static ::IServerEntity* pServerEntity{ };
+            static ::edict_t* pEdict{ };
+            static ::CBaseEntity* pBaseEntity{ };
+            static ::IPlayerInfo* pPlayerInfo{ };
+            static ::IServerUnknown* pServerUnknown{ };
+            static ::IServerEntity* pServerEntity{ };
 
-    for (nPlaying = xTo(false, int), nPlayer = xTo(true, int); nPlayer <= ::gpGlobals->maxClients; nPlayer++)
-    {
+            for (nPlaying = xTo(false, int), nPlayer = xTo(true, int); nPlayer <= ::gpGlobals->maxClients; nPlayer++)
+            {
+                if (nSkipThisEntityIndex == nPlayer)
+                {
+                    continue;
+                }
 
 #if SOURCE_ENGINE != SE_CSGO
 
-        if (pEdict = ::engine->PEntityOfEntIndex(nPlayer))
+                if (pEdict = ::engine->PEntityOfEntIndex(nPlayer))
 
 #else
 
-        if (pEdict = ::gpGlobals->pEdicts + nPlayer)
+                if (pEdict = ::gpGlobals->pEdicts + nPlayer)
 
 #endif
 
-        {
-            if (!(pEdict->m_fStateFlags & FL_EDICT_FREE))
-            {
-                if (!(pEdict->m_fStateFlags & FL_EDICT_DONTSEND))
                 {
-                    if (pEdict->m_NetworkSerialNumber)
+                    if (!(pEdict->m_fStateFlags & FL_EDICT_FREE))
                     {
-                        if (pEdict->m_pNetworkable)
+                        if (!(pEdict->m_fStateFlags & FL_EDICT_DONTSEND))
                         {
-                            if (pServerEntity = pEdict->GetIServerEntity())
+                            if (pEdict->m_NetworkSerialNumber)
                             {
-                                if (pServerUnknown = pEdict->GetUnknown())
+                                if (pEdict->m_pNetworkable)
                                 {
-                                    if (pBaseEntity = pServerEntity->GetBaseEntity())
+                                    if (pServerEntity = pEdict->GetIServerEntity())
                                     {
-                                        if (pPlayerInfo = ::playerinfomanager->GetPlayerInfo(pEdict))
+                                        if (pServerUnknown = pEdict->GetUnknown())
                                         {
-                                            if (pPlayerInfo->IsPlayer())
+                                            if (pBaseEntity = pServerEntity->GetBaseEntity())
                                             {
-                                                if (pPlayerInfo->IsConnected())
+                                                if (pPlayerInfo = ::playerinfomanager->GetPlayerInfo(pEdict))
                                                 {
-                                                    if (pPlayerInfo->GetTeamIndex() > 1)
+                                                    if (pPlayerInfo->IsPlayer())
                                                     {
-                                                        nPlaying++;
+                                                        if (pPlayerInfo->IsConnected())
+                                                        {
+                                                            if (pPlayerInfo->GetTeamIndex() > 1)
+                                                            {
+                                                                nPlaying++;
+                                                            }
+                                                        }
                                                     }
                                                 }
                                             }
@@ -7277,8 +7978,71 @@ int numUsersPlaying() noexcept
                     }
                 }
             }
-        }
-    }
 
-    return nPlaying;
-}
+            return nPlaying;
+        }
+
+        int numUsersConnected(int nSkipThisEntityIndex) noexcept
+        {
+            static int nPlayer{ }, nConnected{ };
+
+            static ::edict_t* pEdict{ };
+            static ::CBaseEntity* pBaseEntity{ };
+            static ::IPlayerInfo* pPlayerInfo{ };
+            static ::IServerUnknown* pServerUnknown{ };
+            static ::IServerEntity* pServerEntity{ };
+
+            for (nConnected = xTo(false, int), nPlayer = xTo(true, int); nPlayer <= ::gpGlobals->maxClients; nPlayer++)
+            {
+                if (nSkipThisEntityIndex == nPlayer)
+                {
+                    continue;
+                }
+
+#if SOURCE_ENGINE != SE_CSGO
+
+                if (pEdict = ::engine->PEntityOfEntIndex(nPlayer))
+
+#else
+
+                if (pEdict = ::gpGlobals->pEdicts + nPlayer)
+
+#endif
+
+                {
+                    if (!(pEdict->m_fStateFlags & FL_EDICT_FREE))
+                    {
+                        if (!(pEdict->m_fStateFlags & FL_EDICT_DONTSEND))
+                        {
+                            if (pEdict->m_NetworkSerialNumber)
+                            {
+                                if (pEdict->m_pNetworkable)
+                                {
+                                    if (pServerEntity = pEdict->GetIServerEntity())
+                                    {
+                                        if (pServerUnknown = pEdict->GetUnknown())
+                                        {
+                                            if (pBaseEntity = pServerEntity->GetBaseEntity())
+                                            {
+                                                if (pPlayerInfo = ::playerinfomanager->GetPlayerInfo(pEdict))
+                                                {
+                                                    if (pPlayerInfo->IsPlayer())
+                                                    {
+                                                        if (pPlayerInfo->IsConnected())
+                                                        {
+                                                            nConnected++;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return nConnected;
+        }
