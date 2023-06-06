@@ -10,6 +10,8 @@ HGSM (Hattrick Game Server Manager) For HL1 Games
         server_tick_rate_and_priority.cfg   The Main Configuration File                                                                         (JSON Type)
         stripper.cfg                        Entities To Be Removed From The Map                                                                 (JSON Type)
 
+        map_adder.ini                       Entities To Be Added To The Map                                                                     (INI Type)
+
         sys.cfg                             Commands To Be Sent To The System Via Cmd/ Terminal                                                 (INI Type)
 
         readme.txt                          Details                                                                                             (TXT Type)

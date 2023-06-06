@@ -52,6 +52,8 @@
 ::std::string g_strNotify_1{ };
 ::std::string g_strNotify_2{ };
 
+::std::string g_strSpawnItems{ };
+
 #ifdef WIN32
 
 ::HWND__* g_pWnd{ };
@@ -63,18 +65,23 @@ bool g_bShow[48]{ };
 bool g_bHide[48]{ };
 bool g_bArmor[48]{ };
 bool g_bRadar[48]{ };
+bool g_bEquip[48]{ };
 
 bool g_bAttached{ };
+
+bool g_bReAlloc{ };
 
 bool g_bLateLoaded{ };
 bool g_bNoReturn{ };
 
 bool g_bResetHud{ };
 bool g_bDeathMsg{ };
+bool g_bScoreInfo{ };
 
 bool g_bNoWeapons{ };
 
 bool g_bStripper{ };
+bool g_bAdder{ };
 
 bool g_bKvEditor{ };
 bool g_bKvAdder{ };
@@ -84,6 +91,8 @@ bool g_bHideMoney{ };
 bool g_bHideTimer{ };
 bool g_bHideFlash{ };
 
+bool g_bEquipAmmo{ };
+bool g_bEquipAmmoNade{ };
 bool g_bRealScoreFriendly{ };
 bool g_bFriendlyDecrease{ };
 bool g_bRealScore{ };
@@ -102,6 +111,8 @@ bool g_bMsgsRcvd{ };
 int g_nDeaths[48]{ };
 int g_nKills[48]{ };
 
+int g_nTeam[48]{ };
+
 int g_nDeathMsg{ };
 int g_nTextMsg{ };
 int g_nScoreShort{ };
@@ -116,8 +127,12 @@ int g_nArmor{ };
 int g_nTicks{ 200, };
 
 int g_nResetHudId{ };
+int g_nScoreInfoId{ };
 
 int g_nDeathMsgByte{ };
+int g_nScoreInfoByte{ };
+
+int g_nScoreInfoShort{ };
 
 int g_nOsOffs{ };
 
@@ -126,6 +141,9 @@ int g_nVictim{ };
 
 int m_iWindows{ };
 int m_iLinux{ 5, };
+int m_iHlWeapVolume{ 174, };
+int m_iHlPrevItem{ 309, };
+int m_iHlDeaths{ 378, };
 int m_iDodTeam{ 1400, };
 int m_iDodScore{ 476, };
 int m_iDodDeaths{ 477, };
@@ -327,6 +345,7 @@ C_DLLEXPORT int GetEngineFunctions_Post(::enginefuncs_t* pengfuncsFromEngine, in
                         ::gEngFuncTable_Post.pfnMessageBegin = ::Hook_MessageBegin_Post;
                         {
                             ::gEngFuncTable_Post.pfnWriteByte = ::Hook_WriteByte_Post;
+                            ::gEngFuncTable_Post.pfnWriteShort = ::Hook_WriteShort_Post;
                         }
                         ::gEngFuncTable_Post.pfnMessageEnd = ::Hook_MessageEnd_Post;
                     }
@@ -1051,14 +1070,90 @@ C_DLLEXPORT int Meta_Detach(::PLUG_LOADTIME, ::PL_UNLOAD_REASON)
 
 int Hook_Spawn(::edict_t* pEntity) noexcept
 {
+    static ::std::vector < ::std::string > vecItems{ };
+
     static ::std::string strClass{ }, strMap{ }, strPath{ };
     static ::std::ifstream inFile{ };
+
     static ::nlohmann::json jsTreeStripper{ }, jsTreeKvAdder{ };
+
     static ::KeyValueData kvData{ };
 
-    static int nIter{ }, nEntity{ };
+#ifdef WIN32
+
+    static ::_iobuf* pFile{ };
+
+#else
+
+    static ::_IO_FILE* pFile{ };
+
+#endif
+
+    static ::edict_t* pItem{ };
+
+    static int nIter{ }, nEntity{ }, nSize{ };
     static bool bErrorStripper{ }, bErrorKvAdder{ }, bKeep{ };
-    static char szClassName[256]{ }, szKeyName[256]{ }, szValue[256]{ };
+    static char szClassName[256]{ }, szKeyName[256]{ }, szValue[256]{ }, szLine[256]{ };
+
+    if (!::g_bAdder)
+    {
+        strMap = STRING(::gpGlobals->mapname);
+        {
+            if (!strMap.empty())
+            {
+                ::makeStrLwr(strMap);
+                {
+                    strPath = ::g_strGameDir + "/addons/hgsm/map_adder.ini";
+                    {
+                        if (::FileExists(strPath))
+                        {
+                            pFile = ::std::fopen(strPath.c_str(), "r");
+                            {
+                                if (pFile)
+                                {
+                                    while (!::std::feof(pFile))
+                                    {
+                                        if (::std::fgets(szLine, sizeof szLine, pFile))
+                                        {
+                                            vecItems = ::explStr(szLine);
+                                            {
+                                                if (!vecItems.empty())
+                                                {
+                                                    nSize = xTo(vecItems.size(), int);
+                                                    {
+                                                        if (nSize > 7)
+                                                        {
+                                                            if (!strMap.compare(::strLwr(vecItems[{ }])))
+                                                            {
+                                                                pItem = ((*::g_engfuncs.pfnCreateNamedEntity) (::allocIdByStr(vecItems[xTo(1, unsigned int)])));
+                                                                {
+                                                                    if (pItem)
+                                                                    {
+                                                                        pItem->v.origin = ::Vector(::std::atof(vecItems[xTo(2, unsigned int)].c_str()), ::std::atof(vecItems[xTo(3, unsigned int)].c_str()), ::std::atof(vecItems[xTo(4, unsigned int)].c_str()));
+                                                                        {
+                                                                            pItem->v.angles = ::Vector(::std::atof(vecItems[xTo(5, unsigned int)].c_str()), ::std::atof(vecItems[xTo(6, unsigned int)].c_str()), ::std::atof(vecItems[xTo(7, unsigned int)].c_str()));
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    ::std::fclose(pFile);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ::g_bAdder = true;
+    }
 
     if (!::g_bStripper)
     {
@@ -1086,6 +1181,9 @@ int Hook_Spawn(::edict_t* pEntity) noexcept
                 }
 
                 strMap.assign(STRING(::gpGlobals->mapname));
+                {
+                    ::makeStrLwr(strMap);
+                }
 
                 if (jsTreeStripper.is_discarded())
                 {
@@ -1169,6 +1267,9 @@ int Hook_Spawn(::edict_t* pEntity) noexcept
                 }
 
                 strMap.assign(STRING(::gpGlobals->mapname));
+                {
+                    ::makeStrLwr(strMap);
+                }
 
                 if (jsTreeKvAdder.is_discarded())
                 {
@@ -1625,6 +1726,11 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
         ::g_strNotify_2.shrink_to_fit();
     }
 
+    ::g_strSpawnItems.clear();
+    {
+        ::g_strSpawnItems.shrink_to_fit();
+    }
+
     ::g_bHideRadar = { };
     ::g_bHideMoney = { };
     ::g_bHideTimer = { };
@@ -1632,6 +1738,8 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
     ::g_bZeroMoney = { };
     ::g_bFixScore = { };
     ::g_bRealScore = { };
+    ::g_bEquipAmmo = { };
+    ::g_bEquipAmmoNade = { };
     ::g_bRealScoreFriendly = { };
     ::g_bFriendlyDecrease = { };
     ::g_bFixKills = { };
@@ -1823,6 +1931,9 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
         {
             ::std::printf("'linux' Is Now '%d'\n", ::m_iLinux);
             ::std::printf("'windows' Is Now '%d'\n", ::m_iWindows);
+            ::std::printf("'hl_weap_volume' Is Now '%d'\n", ::m_iHlWeapVolume);
+            ::std::printf("'hl_prev_item' Is Now '%d'\n", ::m_iHlPrevItem);
+            ::std::printf("'hl_deaths' Is Now '%d'\n", ::m_iHlDeaths);
             ::std::printf("'dod_score' Is Now '%d'\n", ::m_iDodScore);
             ::std::printf("'dod_deaths' Is Now '%d'\n", ::m_iDodDeaths);
             ::std::printf("'dod_team' Is Now '%d'\n", ::m_iDodTeam);
@@ -1846,6 +1957,9 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
                 {
                     ::std::printf("'linux' Is Now '%d'\n", ::m_iLinux);
                     ::std::printf("'windows' Is Now '%d'\n", ::m_iWindows);
+                    ::std::printf("'hl_weap_volume' Is Now '%d'\n", ::m_iHlWeapVolume);
+                    ::std::printf("'hl_prev_item' Is Now '%d'\n", ::m_iHlPrevItem);
+                    ::std::printf("'hl_deaths' Is Now '%d'\n", ::m_iHlDeaths);
                     ::std::printf("'dod_score' Is Now '%d'\n", ::m_iDodScore);
                     ::std::printf("'dod_deaths' Is Now '%d'\n", ::m_iDodDeaths);
                     ::std::printf("'dod_team' Is Now '%d'\n", ::m_iDodTeam);
@@ -1878,6 +1992,9 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
                     {
                         ::std::printf("'linux' Is Now '%d'\n", ::m_iLinux);
                         ::std::printf("'windows' Is Now '%d'\n", ::m_iWindows);
+                        ::std::printf("'hl_weap_volume' Is Now '%d'\n", ::m_iHlWeapVolume);
+                        ::std::printf("'hl_prev_item' Is Now '%d'\n", ::m_iHlPrevItem);
+                        ::std::printf("'hl_deaths' Is Now '%d'\n", ::m_iHlDeaths);
                         ::std::printf("'dod_score' Is Now '%d'\n", ::m_iDodScore);
                         ::std::printf("'dod_deaths' Is Now '%d'\n", ::m_iDodDeaths);
                         ::std::printf("'dod_team' Is Now '%d'\n", ::m_iDodTeam);
@@ -1900,6 +2017,9 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
                         {
                             ::std::printf("'linux' Is Now '%d'\n", ::m_iLinux);
                             ::std::printf("'windows' Is Now '%d'\n", ::m_iWindows);
+                            ::std::printf("'hl_weap_volume' Is Now '%d'\n", ::m_iHlWeapVolume);
+                            ::std::printf("'hl_prev_item' Is Now '%d'\n", ::m_iHlPrevItem);
+                            ::std::printf("'hl_deaths' Is Now '%d'\n", ::m_iHlDeaths);
                             ::std::printf("'dod_score' Is Now '%d'\n", ::m_iDodScore);
                             ::std::printf("'dod_deaths' Is Now '%d'\n", ::m_iDodDeaths);
                             ::std::printf("'dod_team' Is Now '%d'\n", ::m_iDodTeam);
@@ -1922,6 +2042,9 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
                             {
                                 ::std::printf("'linux' Is Now '%d'\n", ::m_iLinux);
                                 ::std::printf("'windows' Is Now '%d'\n", ::m_iWindows);
+                                ::std::printf("'hl_weap_volume' Is Now '%d'\n", ::m_iHlWeapVolume);
+                                ::std::printf("'hl_prev_item' Is Now '%d'\n", ::m_iHlPrevItem);
+                                ::std::printf("'hl_deaths' Is Now '%d'\n", ::m_iHlDeaths);
                                 ::std::printf("'dod_score' Is Now '%d'\n", ::m_iDodScore);
                                 ::std::printf("'dod_deaths' Is Now '%d'\n", ::m_iDodDeaths);
                                 ::std::printf("'dod_team' Is Now '%d'\n", ::m_iDodTeam);
@@ -1969,6 +2092,60 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
                             ::m_iWindows = jsTree["windows"].get < int >();
                             {
                                 ::std::printf("'windows' Is Now '%d'\n", ::m_iWindows);
+                            }
+                        }
+
+                        if (jsTree["hl_weap_volume"].empty())
+                        {
+                            ::std::printf("'hl_weap_volume' Is Now '%d'\n", ::m_iHlWeapVolume);
+                        }
+
+                        else if (!jsTree["hl_weap_volume"].is_number())
+                        {
+                            ::std::printf("'hl_weap_volume' Is Now '%d'\n", ::m_iHlWeapVolume);
+                        }
+
+                        else
+                        {
+                            ::m_iHlWeapVolume = jsTree["hl_weap_volume"].get < int >();
+                            {
+                                ::std::printf("'hl_weap_volume' Is Now '%d'\n", ::m_iHlWeapVolume);
+                            }
+                        }
+
+                        if (jsTree["hl_prev_item"].empty())
+                        {
+                            ::std::printf("'hl_prev_item' Is Now '%d'\n", ::m_iHlPrevItem);
+                        }
+
+                        else if (!jsTree["hl_prev_item"].is_number())
+                        {
+                            ::std::printf("'hl_prev_item' Is Now '%d'\n", ::m_iHlPrevItem);
+                        }
+
+                        else
+                        {
+                            ::m_iHlPrevItem = jsTree["hl_prev_item"].get < int >();
+                            {
+                                ::std::printf("'hl_prev_item' Is Now '%d'\n", ::m_iHlPrevItem);
+                            }
+                        }
+
+                        if (jsTree["hl_deaths"].empty())
+                        {
+                            ::std::printf("'hl_deaths' Is Now '%d'\n", ::m_iHlDeaths);
+                        }
+
+                        else if (!jsTree["hl_deaths"].is_number())
+                        {
+                            ::std::printf("'hl_deaths' Is Now '%d'\n", ::m_iHlDeaths);
+                        }
+
+                        else
+                        {
+                            ::m_iHlDeaths = jsTree["hl_deaths"].get < int >();
+                            {
+                                ::std::printf("'hl_deaths' Is Now '%d'\n", ::m_iHlDeaths);
                             }
                         }
 
@@ -2149,6 +2326,8 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
             ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+            ::std::printf("'Equip Ammo' Is Now '%s'\n", ::g_bEquipAmmo ? "TRUE" : "FALSE");
+            ::std::printf("'Equip Ammo Nade' Is Now '%s'\n", ::g_bEquipAmmoNade ? "TRUE" : "FALSE");
             ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
             ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
             ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
@@ -2166,6 +2345,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
             ::std::printf("'Welcome Console 6' Is Now '%s'\n", ::g_strWelcome_6.c_str());
             ::std::printf("'Welcome Notify 1' Is Now '%s'\n", ::g_strNotify_1.c_str());
             ::std::printf("'Welcome Notify 2' Is Now '%s'\n", ::g_strNotify_2.c_str());
+            ::std::printf("'Spawn Items' Is Now '%s'\n", ::g_strSpawnItems.c_str());
             ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
             ::std::printf("'Give Armor In Spawn' Is Now '%d'\n", ::g_nArmor);
 
@@ -2228,6 +2408,8 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
         ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
         ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
         ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+        ::std::printf("'Equip Ammo' Is Now '%s'\n", ::g_bEquipAmmo ? "TRUE" : "FALSE");
+        ::std::printf("'Equip Ammo Nade' Is Now '%s'\n", ::g_bEquipAmmoNade ? "TRUE" : "FALSE");
         ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
         ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
         ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
@@ -2245,6 +2427,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
         ::std::printf("'Welcome Console 6' Is Now '%s'\n", ::g_strWelcome_6.c_str());
         ::std::printf("'Welcome Notify 1' Is Now '%s'\n", ::g_strNotify_1.c_str());
         ::std::printf("'Welcome Notify 2' Is Now '%s'\n", ::g_strNotify_2.c_str());
+        ::std::printf("'Spawn Items' Is Now '%s'\n", ::g_strSpawnItems.c_str());
         ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
         ::std::printf("'Give Armor In Spawn' Is Now '%d'\n", ::g_nArmor);
 
@@ -2309,6 +2492,8 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
             ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+            ::std::printf("'Equip Ammo' Is Now '%s'\n", ::g_bEquipAmmo ? "TRUE" : "FALSE");
+            ::std::printf("'Equip Ammo Nade' Is Now '%s'\n", ::g_bEquipAmmoNade ? "TRUE" : "FALSE");
             ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
             ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
             ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
@@ -2326,6 +2511,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
             ::std::printf("'Welcome Console 6' Is Now '%s'\n", ::g_strWelcome_6.c_str());
             ::std::printf("'Welcome Notify 1' Is Now '%s'\n", ::g_strNotify_1.c_str());
             ::std::printf("'Welcome Notify 2' Is Now '%s'\n", ::g_strNotify_2.c_str());
+            ::std::printf("'Spawn Items' Is Now '%s'\n", ::g_strSpawnItems.c_str());
             ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
             ::std::printf("'Give Armor In Spawn' Is Now '%d'\n", ::g_nArmor);
 
@@ -2387,6 +2573,8 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
                 ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+                ::std::printf("'Equip Ammo' Is Now '%s'\n", ::g_bEquipAmmo ? "TRUE" : "FALSE");
+                ::std::printf("'Equip Ammo Nade' Is Now '%s'\n", ::g_bEquipAmmoNade ? "TRUE" : "FALSE");
                 ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
                 ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
                 ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
@@ -2404,6 +2592,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
                 ::std::printf("'Welcome Console 6' Is Now '%s'\n", ::g_strWelcome_6.c_str());
                 ::std::printf("'Welcome Notify 1' Is Now '%s'\n", ::g_strNotify_1.c_str());
                 ::std::printf("'Welcome Notify 2' Is Now '%s'\n", ::g_strNotify_2.c_str());
+                ::std::printf("'Spawn Items' Is Now '%s'\n", ::g_strSpawnItems.c_str());
                 ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
                 ::std::printf("'Give Armor In Spawn' Is Now '%d'\n", ::g_nArmor);
 
@@ -2463,6 +2652,8 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
                 ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+                ::std::printf("'Equip Ammo' Is Now '%s'\n", ::g_bEquipAmmo ? "TRUE" : "FALSE");
+                ::std::printf("'Equip Ammo Nade' Is Now '%s'\n", ::g_bEquipAmmoNade ? "TRUE" : "FALSE");
                 ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
                 ::std::printf("'Fix Kills' Is Now '%s'\n", ::g_bFixKills ? "TRUE" : "FALSE");
                 ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
@@ -2480,6 +2671,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
                 ::std::printf("'Welcome Console 6' Is Now '%s'\n", ::g_strWelcome_6.c_str());
                 ::std::printf("'Welcome Notify 1' Is Now '%s'\n", ::g_strNotify_1.c_str());
                 ::std::printf("'Welcome Notify 2' Is Now '%s'\n", ::g_strNotify_2.c_str());
+                ::std::printf("'Spawn Items' Is Now '%s'\n", ::g_strSpawnItems.c_str());
                 ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
                 ::std::printf("'Give Armor In Spawn' Is Now '%d'\n", ::g_nArmor);
 
@@ -2649,6 +2841,42 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
         ::g_bRealScoreFriendly = jsTree["Real Score Friendly"].get < bool >();
         {
             ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+        }
+    }
+
+    if (jsTree["Equip Ammo"].empty())
+    {
+        ::std::printf("'Equip Ammo' Is Now '%s'\n", ::g_bEquipAmmo ? "TRUE" : "FALSE");
+    }
+
+    else if (!jsTree["Equip Ammo"].is_boolean())
+    {
+        ::std::printf("'Equip Ammo' Is Now '%s'\n", ::g_bEquipAmmo ? "TRUE" : "FALSE");
+    }
+
+    else
+    {
+        ::g_bEquipAmmo = jsTree["Equip Ammo"].get < bool >();
+        {
+            ::std::printf("'Equip Ammo' Is Now '%s'\n", ::g_bEquipAmmo ? "TRUE" : "FALSE");
+        }
+    }
+
+    if (jsTree["Equip Ammo Nade"].empty())
+    {
+        ::std::printf("'Equip Ammo Nade' Is Now '%s'\n", ::g_bEquipAmmoNade ? "TRUE" : "FALSE");
+    }
+
+    else if (!jsTree["Equip Ammo Nade"].is_boolean())
+    {
+        ::std::printf("'Equip Ammo Nade' Is Now '%s'\n", ::g_bEquipAmmoNade ? "TRUE" : "FALSE");
+    }
+
+    else
+    {
+        ::g_bEquipAmmoNade = jsTree["Equip Ammo Nade"].get < bool >();
+        {
+            ::std::printf("'Equip Ammo Nade' Is Now '%s'\n", ::g_bEquipAmmoNade ? "TRUE" : "FALSE");
         }
     }
 
@@ -3258,6 +3486,26 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
         ::std::printf("'Welcome Notify 2' Is Now '%s'\n", ::g_strNotify_2.c_str());
     }
 
+    if (jsTree["Spawn Items"].empty())
+    {
+        ::std::printf("'Spawn Items' Is Now '%s'\n", ::g_strSpawnItems.c_str());
+    }
+
+    else if (!jsTree["Spawn Items"].is_string())
+    {
+        ::std::printf("'Spawn Items' Is Now '%s'\n", ::g_strSpawnItems.c_str());
+    }
+
+    else
+    {
+        ::g_strSpawnItems = jsTree["Spawn Items"].get < ::std::string >();
+        {
+            ::g_strSpawnItems.shrink_to_fit();
+        }
+
+        ::std::printf("'Spawn Items' Is Now '%s'\n", ::g_strSpawnItems.c_str());
+    }
+
     if (jsTree["Hide Radar"].empty())
     {
         ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
@@ -3437,6 +3685,7 @@ void Hook_ServerDeactivate() noexcept
 
     ::g_llMapChange = ::std::time(nullptr);
     {
+        ::g_bAdder = { };
         ::g_bStripper = { };
         ::g_bKvEditor = { };
         ::g_bKvAdder = { };
@@ -3540,6 +3789,9 @@ void Hook_KeyValue(::edict_t* pEntity, ::KeyValueData* pKvData) noexcept
                 }
 
                 strMap.assign(STRING(::gpGlobals->mapname));
+                {
+                    ::makeStrLwr(strMap);
+                }
 
                 if (jsTree.is_discarded())
                 {
@@ -3801,6 +4053,8 @@ int Hook_ClientConnect(::edict_t* pEntity, const char* pszName, const char* pszA
     {
         if ((nEntity = ::ENTINDEX(pEntity)) > 0)
         {
+            ::g_bEquip[nEntity] = { };
+
             if (::g_bRealScore)
             {
                 ::g_nDeaths[nEntity] = { };
@@ -3945,6 +4199,8 @@ void Hook_ClientDisconnect(::edict_t* pEntity) noexcept
     {
         if ((nEntity = ::ENTINDEX(pEntity)) > 0)
         {
+            ::g_bEquip[nEntity] = { };
+
             if (::g_bRealScore)
             {
                 ::g_nDeaths[nEntity] = { };
@@ -4043,6 +4299,7 @@ void Hook_ServerDeactivate_Post() noexcept
 
     ::g_llMapChange = ::std::time(nullptr);
     {
+        ::g_bAdder = { };
         ::g_bStripper = { };
         ::g_bKvEditor = { };
         ::g_bKvAdder = { };
@@ -4120,7 +4377,10 @@ void Hook_ServerActivate_Post(::edict_t*, int, int) noexcept
 
     static bool bFlags{ };
 
-    ::g_llMapChange = ::std::time(nullptr);
+    ::g_bReAlloc = true;
+    {
+        ::g_llMapChange = ::std::time(nullptr);
+    }
 
     strPath.assign(::g_strGameDir + "/addons/hgsm/reveal_console_variables.cfg");
 
@@ -4452,7 +4712,7 @@ void Hook_StartFrame_Post() noexcept
     static int nEntity{ }, nIter{ }, nFov{ }, nTeam{ }, nKevlar{ };
     static bool bAltered{ };
 
-    static ::std::string strCmd{ };
+    static ::std::string strCmd{ }, strItem{ };
 
     static ::edict_t* pEntity{ };
 
@@ -5143,6 +5403,144 @@ void Hook_StartFrame_Post() noexcept
                                                         }
                                                     }
 
+                                                    else if (!::g_strGameDir.compare("valve"))
+                                                    {
+                                                        if (*((int*)pEntity->pvPrivateData + ::m_iHlWeapVolume + ::g_nOsOffs) > 0 || *((int*)pEntity->pvPrivateData + ::m_iHlPrevItem + ::g_nOsOffs) > 0)
+                                                        {
+                                                            if (!::g_bShow[nEntity])
+                                                            {
+                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                {
+                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_1.c_str());
+                                                                }
+                                                                (*::g_engfuncs.pfnMessageEnd) ();
+
+                                                                if (!::g_strWelcome_2.empty())
+                                                                {
+                                                                    if (::g_strWelcome_2.length() <= 190)
+                                                                    {
+                                                                        if (::g_strWelcome_2.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_2.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (!::g_strWelcome_3.empty())
+                                                                {
+                                                                    if (::g_strWelcome_3.length() <= 190)
+                                                                    {
+                                                                        if (::g_strWelcome_3.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_3.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (!::g_strWelcome_4.empty())
+                                                                {
+                                                                    if (::g_strWelcome_4.length() <= 190)
+                                                                    {
+                                                                        if (::g_strWelcome_4.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_4.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (!::g_strWelcome_5.empty())
+                                                                {
+                                                                    if (::g_strWelcome_5.length() <= 190)
+                                                                    {
+                                                                        if (::g_strWelcome_5.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_5.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (!::g_strWelcome_6.empty())
+                                                                {
+                                                                    if (::g_strWelcome_6.length() <= 190)
+                                                                    {
+                                                                        if (::g_strWelcome_6.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_6.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (!::g_strNotify_1.empty())
+                                                                {
+                                                                    if (::g_strNotify_1.length() <= 190)
+                                                                    {
+                                                                        if (::g_strNotify_1.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTTALK);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strNotify_1.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (!::g_strNotify_2.empty())
+                                                                {
+                                                                    if (::g_strNotify_2.length() <= 190)
+                                                                    {
+                                                                        if (::g_strNotify_2.size() <= 190)
+                                                                        {
+                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTTALK);
+
+                                                                                (*::g_engfuncs.pfnWriteString) (::g_strNotify_2.c_str());
+                                                                            }
+                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                ::g_bShow[nEntity] = true;
+                                                            }
+                                                        }
+                                                    }
+
                                                     else
                                                     {
                                                         if ((nTeam = *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs)) == 1)
@@ -5601,6 +5999,20 @@ void Hook_StartFrame_Post() noexcept
                                                 }
                                             }
 
+                                            else if (!::g_strGameDir.compare("valve"))
+                                            {
+                                                if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) > 0)
+                                                {
+                                                    *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = { };
+                                                    {
+                                                        bAltered = true;
+                                                        {
+                                                            ::g_nDeaths[nEntity] = { };
+                                                        }
+                                                    }
+                                                }
+                                            }
+
                                             else
                                             {
                                                 if (*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) > 0)
@@ -5621,6 +6033,20 @@ void Hook_StartFrame_Post() noexcept
                                             if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
                                             {
                                                 *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                {
+                                                    bAltered = true;
+                                                    {
+                                                        ::g_nDeaths[nEntity] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        else if (!::g_strGameDir.compare("valve"))
+                                        {
+                                            if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                            {
+                                                *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
                                                 {
                                                     bAltered = true;
                                                     {
@@ -5677,6 +6103,20 @@ void Hook_StartFrame_Post() noexcept
                                                 }
                                             }
 
+                                            else if (!::g_strGameDir.compare("valve"))
+                                            {
+                                                if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) > 0)
+                                                {
+                                                    *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = { };
+                                                    {
+                                                        bAltered = true;
+                                                        {
+                                                            ::g_nDeaths[nEntity] = { };
+                                                        }
+                                                    }
+                                                }
+                                            }
+
                                             else
                                             {
                                                 if (*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) > 0)
@@ -5697,6 +6137,20 @@ void Hook_StartFrame_Post() noexcept
                                             if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
                                             {
                                                 *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                {
+                                                    bAltered = true;
+                                                    {
+                                                        ::g_nDeaths[nEntity] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        else if (!::g_strGameDir.compare("valve"))
+                                        {
+                                            if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                            {
+                                                *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
                                                 {
                                                     bAltered = true;
                                                     {
@@ -5746,6 +6200,17 @@ void Hook_StartFrame_Post() noexcept
                                                     }
                                                 }
 
+                                                else if (!::g_strGameDir.compare("valve"))
+                                                {
+                                                    if (!(*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs)))
+                                                    {
+                                                        ::g_nKills[nEntity] = { };
+                                                        {
+                                                            ::g_nDeaths[nEntity] = { };
+                                                        }
+                                                    }
+                                                }
+
                                                 else
                                                 {
                                                     if (!(*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs)))
@@ -5772,6 +6237,17 @@ void Hook_StartFrame_Post() noexcept
                                             if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) != ::g_nDeaths[nEntity])
                                             {
                                                 *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = ::g_nDeaths[nEntity];
+                                                {
+                                                    bAltered = true;
+                                                }
+                                            }
+                                        }
+
+                                        else if (!::g_strGameDir.compare("valve"))
+                                        {
+                                            if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) != ::g_nDeaths[nEntity])
+                                            {
+                                                *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = ::g_nDeaths[nEntity];
                                                 {
                                                     bAltered = true;
                                                 }
@@ -5814,6 +6290,24 @@ void Hook_StartFrame_Post() noexcept
                                                 }
                                             }
 
+                                            else if (!::g_strGameDir.compare("valve"))
+                                            {
+                                                if (::g_nScoreInfo > 0)
+                                                {
+                                                    (*::g_engfuncs.pfnMessageBegin) (::g_bAllReliable ? MSG_ALL : MSG_BROADCAST, ::g_nScoreInfo, nullptr, nullptr);
+                                                    {
+                                                        (*::g_engfuncs.pfnWriteByte) (nEntity);
+                                                        {
+                                                            (*::g_engfuncs.pfnWriteShort) (pEntity->v.frags);
+                                                            (*::g_engfuncs.pfnWriteShort) (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs));
+                                                            (*::g_engfuncs.pfnWriteShort) ({ });
+                                                            (*::g_engfuncs.pfnWriteShort) (::g_nTeam[nEntity]);
+                                                        }
+                                                    }
+                                                    (*::g_engfuncs.pfnMessageEnd) ();
+                                                }
+                                            }
+
                                             else
                                             {
                                                 if (::g_nScoreInfo > 0)
@@ -5842,6 +6336,120 @@ void Hook_StartFrame_Post() noexcept
                                             {
                                                 if (pEntity->v.weapons)
                                                 {
+                                                    if (::g_bEquip[nEntity])
+                                                    {
+                                                        strItem = ::pickRndItem(::g_strSpawnItems);
+                                                        {
+                                                            if (::giveGameItem(strItem, pEntity) && ::g_bEquipAmmo)
+                                                            {
+                                                                if (!strItem.compare("weapon_gauss"))
+                                                                {
+                                                                    ::giveGameItem("ammo_gaussclip", pEntity);
+                                                                    ::giveGameItem("ammo_gaussclip", pEntity);
+
+                                                                    ::giveGameItem("ammo_gaussclip", pEntity);
+                                                                    ::giveGameItem("ammo_gaussclip", pEntity);
+                                                                }
+
+                                                                else if (!strItem.compare("weapon_rpg"))
+                                                                {
+                                                                    ::giveGameItem("ammo_rpgclip", pEntity);
+                                                                    ::giveGameItem("ammo_rpgclip", pEntity);
+                                                                }
+
+                                                                else if (!strItem.compare("weapon_357"))
+                                                                {
+                                                                    ::giveGameItem("ammo_357", pEntity);
+                                                                    ::giveGameItem("ammo_357", pEntity);
+
+                                                                    ::giveGameItem("ammo_357", pEntity);
+                                                                    ::giveGameItem("ammo_357", pEntity);
+
+                                                                    ::giveGameItem("ammo_357", pEntity);
+                                                                    ::giveGameItem("ammo_357", pEntity);
+                                                                }
+
+                                                                else if (!strItem.compare("weapon_egon"))
+                                                                {
+                                                                    ::giveGameItem("weapon_egon", pEntity);
+                                                                    ::giveGameItem("weapon_egon", pEntity);
+
+                                                                    ::giveGameItem("weapon_egon", pEntity);
+                                                                    ::giveGameItem("weapon_egon", pEntity);
+                                                                }
+
+                                                                else if (!strItem.compare("weapon_crossbow"))
+                                                                {
+                                                                    ::giveGameItem("ammo_crossbow", pEntity);
+                                                                    ::giveGameItem("ammo_crossbow", pEntity);
+
+                                                                    ::giveGameItem("ammo_crossbow", pEntity);
+                                                                    ::giveGameItem("ammo_crossbow", pEntity);
+
+                                                                    ::giveGameItem("ammo_crossbow", pEntity);
+                                                                    ::giveGameItem("ammo_crossbow", pEntity);
+
+                                                                    ::giveGameItem("ammo_crossbow", pEntity);
+                                                                    ::giveGameItem("ammo_crossbow", pEntity);
+
+                                                                    ::giveGameItem("ammo_crossbow", pEntity);
+                                                                    ::giveGameItem("ammo_crossbow", pEntity);
+                                                                }
+
+                                                                else if (!strItem.compare("weapon_shotgun"))
+                                                                {
+                                                                    ::giveGameItem("ammo_buckshot", pEntity);
+                                                                    ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                    ::giveGameItem("ammo_buckshot", pEntity);
+                                                                    ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                    ::giveGameItem("ammo_buckshot", pEntity);
+                                                                    ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                    ::giveGameItem("ammo_buckshot", pEntity);
+                                                                    ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                    ::giveGameItem("ammo_buckshot", pEntity);
+                                                                    ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                    ::giveGameItem("ammo_buckshot", pEntity);
+                                                                    ::giveGameItem("ammo_buckshot", pEntity);
+                                                                }
+
+                                                                else if (!strItem.compare("weapon_9mmAR") || !strItem.compare("weapon_9mmAr") ||
+                                                                    !strItem.compare("weapon_9mmaR") || !strItem.compare("weapon_9mmar"))
+                                                                {
+                                                                    ::giveGameItem("ammo_9mmAR", pEntity);
+                                                                    ::giveGameItem("ammo_9mmAR", pEntity);
+
+                                                                    ::giveGameItem("ammo_9mmAR", pEntity);
+                                                                    ::giveGameItem("ammo_9mmAR", pEntity);
+
+                                                                    ::giveGameItem("ammo_9mmAR", pEntity);
+                                                                    ::giveGameItem("ammo_9mmAR", pEntity);
+
+                                                                    ::giveGameItem("ammo_9mmAR", pEntity);
+                                                                    ::giveGameItem("ammo_9mmAR", pEntity);
+
+                                                                    if (::g_bEquipAmmoNade)
+                                                                    {
+                                                                        ::giveGameItem("ammo_ARgrenades", pEntity);
+                                                                        ::giveGameItem("ammo_ARgrenades", pEntity);
+
+                                                                        ::giveGameItem("ammo_ARgrenades", pEntity);
+                                                                        ::giveGameItem("ammo_ARgrenades", pEntity);
+
+                                                                        ::giveGameItem("ammo_ARgrenades", pEntity);
+                                                                        ::giveGameItem("ammo_ARgrenades", pEntity);
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+
+                                                        ::g_bEquip[nEntity] = { };
+                                                    }
+
                                                     if (::g_bHideRadar)
                                                     {
                                                         if (!::g_bRadar[nEntity])
@@ -6062,6 +6670,120 @@ void Hook_StartFrame_Post() noexcept
 
                                             else
                                             {
+                                                if (::g_bEquip[nEntity])
+                                                {
+                                                    strItem = ::pickRndItem(::g_strSpawnItems);
+                                                    {
+                                                        if (::giveGameItem(strItem, pEntity) && ::g_bEquipAmmo)
+                                                        {
+                                                            if (!strItem.compare("weapon_gauss"))
+                                                            {
+                                                                ::giveGameItem("ammo_gaussclip", pEntity);
+                                                                ::giveGameItem("ammo_gaussclip", pEntity);
+
+                                                                ::giveGameItem("ammo_gaussclip", pEntity);
+                                                                ::giveGameItem("ammo_gaussclip", pEntity);
+                                                            }
+
+                                                            else if (!strItem.compare("weapon_rpg"))
+                                                            {
+                                                                ::giveGameItem("ammo_rpgclip", pEntity);
+                                                                ::giveGameItem("ammo_rpgclip", pEntity);
+                                                            }
+
+                                                            else if (!strItem.compare("weapon_357"))
+                                                            {
+                                                                ::giveGameItem("ammo_357", pEntity);
+                                                                ::giveGameItem("ammo_357", pEntity);
+
+                                                                ::giveGameItem("ammo_357", pEntity);
+                                                                ::giveGameItem("ammo_357", pEntity);
+
+                                                                ::giveGameItem("ammo_357", pEntity);
+                                                                ::giveGameItem("ammo_357", pEntity);
+                                                            }
+
+                                                            else if (!strItem.compare("weapon_egon"))
+                                                            {
+                                                                ::giveGameItem("weapon_egon", pEntity);
+                                                                ::giveGameItem("weapon_egon", pEntity);
+
+                                                                ::giveGameItem("weapon_egon", pEntity);
+                                                                ::giveGameItem("weapon_egon", pEntity);
+                                                            }
+
+                                                            else if (!strItem.compare("weapon_crossbow"))
+                                                            {
+                                                                ::giveGameItem("ammo_crossbow", pEntity);
+                                                                ::giveGameItem("ammo_crossbow", pEntity);
+
+                                                                ::giveGameItem("ammo_crossbow", pEntity);
+                                                                ::giveGameItem("ammo_crossbow", pEntity);
+
+                                                                ::giveGameItem("ammo_crossbow", pEntity);
+                                                                ::giveGameItem("ammo_crossbow", pEntity);
+
+                                                                ::giveGameItem("ammo_crossbow", pEntity);
+                                                                ::giveGameItem("ammo_crossbow", pEntity);
+
+                                                                ::giveGameItem("ammo_crossbow", pEntity);
+                                                                ::giveGameItem("ammo_crossbow", pEntity);
+                                                            }
+
+                                                            else if (!strItem.compare("weapon_shotgun"))
+                                                            {
+                                                                ::giveGameItem("ammo_buckshot", pEntity);
+                                                                ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                ::giveGameItem("ammo_buckshot", pEntity);
+                                                                ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                ::giveGameItem("ammo_buckshot", pEntity);
+                                                                ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                ::giveGameItem("ammo_buckshot", pEntity);
+                                                                ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                ::giveGameItem("ammo_buckshot", pEntity);
+                                                                ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                ::giveGameItem("ammo_buckshot", pEntity);
+                                                                ::giveGameItem("ammo_buckshot", pEntity);
+                                                            }
+
+                                                            else if (!strItem.compare("weapon_9mmAR") || !strItem.compare("weapon_9mmAr") ||
+                                                                !strItem.compare("weapon_9mmaR") || !strItem.compare("weapon_9mmar"))
+                                                            {
+                                                                ::giveGameItem("ammo_9mmAR", pEntity);
+                                                                ::giveGameItem("ammo_9mmAR", pEntity);
+
+                                                                ::giveGameItem("ammo_9mmAR", pEntity);
+                                                                ::giveGameItem("ammo_9mmAR", pEntity);
+
+                                                                ::giveGameItem("ammo_9mmAR", pEntity);
+                                                                ::giveGameItem("ammo_9mmAR", pEntity);
+
+                                                                ::giveGameItem("ammo_9mmAR", pEntity);
+                                                                ::giveGameItem("ammo_9mmAR", pEntity);
+
+                                                                if (::g_bEquipAmmoNade)
+                                                                {
+                                                                    ::giveGameItem("ammo_ARgrenades", pEntity);
+                                                                    ::giveGameItem("ammo_ARgrenades", pEntity);
+
+                                                                    ::giveGameItem("ammo_ARgrenades", pEntity);
+                                                                    ::giveGameItem("ammo_ARgrenades", pEntity);
+
+                                                                    ::giveGameItem("ammo_ARgrenades", pEntity);
+                                                                    ::giveGameItem("ammo_ARgrenades", pEntity);
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    ::g_bEquip[nEntity] = { };
+                                                }
+
                                                 if (::g_bHideRadar)
                                                 {
                                                     if (!::g_bRadar[nEntity])
@@ -6503,6 +7225,8 @@ int Hook_ClientConnect_Post(::edict_t* pEntity, const char* pszName, const char*
     {
         if ((nEntity = ::ENTINDEX(pEntity)) > 0)
         {
+            ::g_bEquip[nEntity] = { };
+
             if (::g_bRealScore)
             {
                 ::g_nDeaths[nEntity] = { };
@@ -6804,6 +7528,8 @@ void Hook_ClientDisconnect_Post(::edict_t* pEntity) noexcept
     {
         if ((nEntity = ::ENTINDEX(pEntity)) > 0)
         {
+            ::g_bEquip[nEntity] = { };
+
             if (::g_bRealScore)
             {
                 ::g_nDeaths[nEntity] = { };
@@ -7216,9 +7942,12 @@ void Hook_MessageBegin_Post(int, int nMsg, const float*, ::edict_t* pEntity) noe
                                                     {
                                                         if ((::g_nResetHudId = ::ENTINDEX(pEntity)) > 0)
                                                         {
-                                                            if (::g_nArmor)
+                                                            ::g_bEquip[::g_nResetHudId] = (!(::g_strSpawnItems.empty()));
                                                             {
-                                                                ::g_bArmor[::g_nResetHudId] = { };
+                                                                if (::g_nArmor)
+                                                                {
+                                                                    ::g_bArmor[::g_nResetHudId] = { };
+                                                                }
                                                             }
                                                         }
 
@@ -7249,9 +7978,12 @@ void Hook_MessageBegin_Post(int, int nMsg, const float*, ::edict_t* pEntity) noe
                                                         {
                                                             if ((::g_nResetHudId = ::ENTINDEX(pEntity)) > 0)
                                                             {
-                                                                if (::g_nArmor)
+                                                                ::g_bEquip[::g_nResetHudId] = (!(::g_strSpawnItems.empty()));
                                                                 {
-                                                                    ::g_bArmor[::g_nResetHudId] = { };
+                                                                    if (::g_nArmor)
+                                                                    {
+                                                                        ::g_bArmor[::g_nResetHudId] = { };
+                                                                    }
                                                                 }
                                                             }
 
@@ -7466,6 +8198,23 @@ void Hook_MessageBegin_Post(int, int nMsg, const float*, ::edict_t* pEntity) noe
                         }
                     }
                 }
+
+                if (::g_nScoreInfo > 0)
+                {
+                    if (nMsg == ::g_nScoreInfo)
+                    {
+                        ::g_bScoreInfo = true;
+                        {
+                            ::g_nScoreInfoByte = { };
+                            {
+                                ::g_nScoreInfoShort = { };
+                                {
+                                    ::g_nScoreInfoId = { };
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -7490,6 +8239,23 @@ void Hook_MessageBegin_Post(int, int nMsg, const float*, ::edict_t* pEntity) noe
                     }
                 }
             }
+
+            if (::g_nScoreInfo > 0)
+            {
+                if (nMsg == ::g_nScoreInfo)
+                {
+                    ::g_bScoreInfo = true;
+                    {
+                        ::g_nScoreInfoByte = { };
+                        {
+                            ::g_nScoreInfoShort = { };
+                            {
+                                ::g_nScoreInfoId = { };
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -7509,6 +8275,23 @@ void Hook_MessageBegin_Post(int, int nMsg, const float*, ::edict_t* pEntity) noe
                             {
                                 ::g_nVictim = { };
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (::g_nScoreInfo > 0)
+        {
+            if (nMsg == ::g_nScoreInfo)
+            {
+                ::g_bScoreInfo = true;
+                {
+                    ::g_nScoreInfoByte = { };
+                    {
+                        ::g_nScoreInfoShort = { };
+                        {
+                            ::g_nScoreInfoId = { };
                         }
                     }
                 }
@@ -7567,6 +8350,57 @@ void Hook_WriteByte_Post(int nByte) noexcept
         }
     }
 
+    if (::g_nScoreInfo > 0)
+    {
+        if (::g_bScoreInfo)
+        {
+            if (++::g_nScoreInfoByte == xTo(true, int))
+            {
+                ::g_nScoreInfoId = nByte;
+            }
+        }
+    }
+
+    if (!::g_bNoReturn)
+    {
+        do
+        {
+            ::gpMetaGlobals->mres = ::MRES_IGNORED;
+
+            return;
+        }
+
+        while (false);
+    }
+
+    else
+    {
+        return;
+    }
+}
+
+#ifdef WIN32
+
+constexpr void Hook_WriteShort_Post(int nShort) noexcept
+
+#else
+
+void Hook_WriteShort_Post(int nShort) noexcept
+
+#endif
+
+{
+    if (::g_nScoreInfo > 0)
+    {
+        if (::g_bScoreInfo)
+        {
+            if (++::g_nScoreInfoShort == 4)
+            {
+                ::g_nTeam[::g_nScoreInfoId] = nShort;
+            }
+        }
+    }
+
     if (!::g_bNoReturn)
     {
         do
@@ -7587,11 +8421,11 @@ void Hook_WriteByte_Post(int nByte) noexcept
 
 void Hook_MessageEnd_Post() noexcept
 {
-    static ::cvar_t* pFriendlyFire{ };
+    static ::cvar_t* pFriendlyFire{ }, * pTeamPlay{ };
     static ::edict_t* pEntity{ }, * pVictim{ };
 
     static int nTeam{ }, nFov{ }, nKevlar{ };
-    static bool bAltered{ }, bConVars{ }, bSafe{ };
+    static bool bAltered{ }, bConVars{ }, bSafe{ }, bFriendlyFire{ };
 
     if (!::g_bMsgsRcvd)
     {
@@ -8288,6 +9122,144 @@ void Hook_MessageEnd_Post() noexcept
                                                                         }
                                                                     }
 
+                                                                    else if (!::g_strGameDir.compare("valve"))
+                                                                    {
+                                                                        if (*((int*)pEntity->pvPrivateData + ::m_iHlWeapVolume + ::g_nOsOffs) > 0 || *((int*)pEntity->pvPrivateData + ::m_iHlPrevItem + ::g_nOsOffs) > 0)
+                                                                        {
+                                                                            if (!::g_bShow[::g_nResetHudId])
+                                                                            {
+                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                {
+                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_1.c_str());
+                                                                                }
+                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+
+                                                                                if (!::g_strWelcome_2.empty())
+                                                                                {
+                                                                                    if (::g_strWelcome_2.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strWelcome_2.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_2.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                if (!::g_strWelcome_3.empty())
+                                                                                {
+                                                                                    if (::g_strWelcome_3.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strWelcome_3.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_3.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                if (!::g_strWelcome_4.empty())
+                                                                                {
+                                                                                    if (::g_strWelcome_4.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strWelcome_4.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_4.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                if (!::g_strWelcome_5.empty())
+                                                                                {
+                                                                                    if (::g_strWelcome_5.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strWelcome_5.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_5.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                if (!::g_strWelcome_6.empty())
+                                                                                {
+                                                                                    if (::g_strWelcome_6.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strWelcome_6.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strWelcome_6.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                if (!::g_strNotify_1.empty())
+                                                                                {
+                                                                                    if (::g_strNotify_1.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strNotify_1.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTTALK);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strNotify_1.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                if (!::g_strNotify_2.empty())
+                                                                                {
+                                                                                    if (::g_strNotify_2.length() <= 190)
+                                                                                    {
+                                                                                        if (::g_strNotify_2.size() <= 190)
+                                                                                        {
+                                                                                            (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnWriteByte) (HUD_PRINTTALK);
+
+                                                                                                (*::g_engfuncs.pfnWriteString) (::g_strNotify_2.c_str());
+                                                                                            }
+                                                                                            (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                ::g_bShow[::g_nResetHudId] = true;
+                                                                            }
+                                                                        }
+                                                                    }
+
                                                                     else
                                                                     {
                                                                         if ((nTeam = *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs)) == 1)
@@ -8746,6 +9718,20 @@ void Hook_MessageEnd_Post() noexcept
                                                                 }
                                                             }
 
+                                                            else if (!::g_strGameDir.compare("valve"))
+                                                            {
+                                                                if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) > 0)
+                                                                {
+                                                                    *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = { };
+                                                                    {
+                                                                        bAltered = true;
+                                                                        {
+                                                                            ::g_nDeaths[::g_nResetHudId] = { };
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+
                                                             else
                                                             {
                                                                 if (*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) > 0)
@@ -8766,6 +9752,20 @@ void Hook_MessageEnd_Post() noexcept
                                                             if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
                                                             {
                                                                 *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                {
+                                                                    bAltered = true;
+                                                                    {
+                                                                        ::g_nDeaths[::g_nResetHudId] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+
+                                                        else if (!::g_strGameDir.compare("valve"))
+                                                        {
+                                                            if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                                            {
+                                                                *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
                                                                 {
                                                                     bAltered = true;
                                                                     {
@@ -8822,6 +9822,20 @@ void Hook_MessageEnd_Post() noexcept
                                                                 }
                                                             }
 
+                                                            else if (!::g_strGameDir.compare("valve"))
+                                                            {
+                                                                if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) > 0)
+                                                                {
+                                                                    *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = { };
+                                                                    {
+                                                                        bAltered = true;
+                                                                        {
+                                                                            ::g_nDeaths[::g_nResetHudId] = { };
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+
                                                             else
                                                             {
                                                                 if (*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) > 0)
@@ -8842,6 +9856,20 @@ void Hook_MessageEnd_Post() noexcept
                                                             if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
                                                             {
                                                                 *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                {
+                                                                    bAltered = true;
+                                                                    {
+                                                                        ::g_nDeaths[::g_nResetHudId] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+
+                                                        else if (!::g_strGameDir.compare("valve"))
+                                                        {
+                                                            if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                                            {
+                                                                *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
                                                                 {
                                                                     bAltered = true;
                                                                     {
@@ -8891,6 +9919,17 @@ void Hook_MessageEnd_Post() noexcept
                                                                     }
                                                                 }
 
+                                                                else if (!::g_strGameDir.compare("valve"))
+                                                                {
+                                                                    if (!(*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs)))
+                                                                    {
+                                                                        ::g_nKills[::g_nResetHudId] = { };
+                                                                        {
+                                                                            ::g_nDeaths[::g_nResetHudId] = { };
+                                                                        }
+                                                                    }
+                                                                }
+
                                                                 else
                                                                 {
                                                                     if (!(*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs)))
@@ -8917,6 +9956,17 @@ void Hook_MessageEnd_Post() noexcept
                                                             if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) != ::g_nDeaths[::g_nResetHudId])
                                                             {
                                                                 *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = ::g_nDeaths[::g_nResetHudId];
+                                                                {
+                                                                    bAltered = true;
+                                                                }
+                                                            }
+                                                        }
+
+                                                        else if (!::g_strGameDir.compare("valve"))
+                                                        {
+                                                            if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) != ::g_nDeaths[::g_nResetHudId])
+                                                            {
+                                                                *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = ::g_nDeaths[::g_nResetHudId];
                                                                 {
                                                                     bAltered = true;
                                                                 }
@@ -8954,6 +10004,24 @@ void Hook_MessageEnd_Post() noexcept
                                                                             (*::g_engfuncs.pfnWriteShort) (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs));
                                                                         }
                                                                         (*::g_engfuncs.pfnWriteByte) (xTo(true, int));
+                                                                    }
+                                                                    (*::g_engfuncs.pfnMessageEnd) ();
+                                                                }
+                                                            }
+
+                                                            else if (!::g_strGameDir.compare("valve"))
+                                                            {
+                                                                if (::g_nScoreInfo > 0)
+                                                                {
+                                                                    (*::g_engfuncs.pfnMessageBegin) (::g_bAllReliable ? MSG_ALL : MSG_BROADCAST, ::g_nScoreInfo, nullptr, nullptr);
+                                                                    {
+                                                                        (*::g_engfuncs.pfnWriteByte) (::g_nResetHudId);
+                                                                        {
+                                                                            (*::g_engfuncs.pfnWriteShort) (pEntity->v.frags);
+                                                                            (*::g_engfuncs.pfnWriteShort) (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs));
+                                                                            (*::g_engfuncs.pfnWriteShort) ({ });
+                                                                            (*::g_engfuncs.pfnWriteShort) (::g_nTeam[::g_nResetHudId]);
+                                                                        }
                                                                     }
                                                                     (*::g_engfuncs.pfnMessageEnd) ();
                                                                 }
@@ -9753,6 +10821,144 @@ void Hook_MessageEnd_Post() noexcept
                                                                             }
                                                                         }
 
+                                                                        else if (!::g_strGameDir.compare("valve"))
+                                                                        {
+                                                                            if (*((int*)pEntity->pvPrivateData + ::m_iHlWeapVolume + ::g_nOsOffs) > 0 || *((int*)pEntity->pvPrivateData + ::m_iHlPrevItem + ::g_nOsOffs) > 0)
+                                                                            {
+                                                                                if (!::g_bShow[::g_nResetHudId])
+                                                                                {
+                                                                                    (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                    {
+                                                                                        (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                        (*::g_engfuncs.pfnWriteString) (::g_strWelcome_1.c_str());
+                                                                                    }
+                                                                                    (*::g_engfuncs.pfnMessageEnd) ();
+
+                                                                                    if (!::g_strWelcome_2.empty())
+                                                                                    {
+                                                                                        if (::g_strWelcome_2.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strWelcome_2.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_2.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    if (!::g_strWelcome_3.empty())
+                                                                                    {
+                                                                                        if (::g_strWelcome_3.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strWelcome_3.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_3.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    if (!::g_strWelcome_4.empty())
+                                                                                    {
+                                                                                        if (::g_strWelcome_4.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strWelcome_4.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_4.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    if (!::g_strWelcome_5.empty())
+                                                                                    {
+                                                                                        if (::g_strWelcome_5.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strWelcome_5.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_5.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    if (!::g_strWelcome_6.empty())
+                                                                                    {
+                                                                                        if (::g_strWelcome_6.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strWelcome_6.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTCONSOLE);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strWelcome_6.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    if (!::g_strNotify_1.empty())
+                                                                                    {
+                                                                                        if (::g_strNotify_1.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strNotify_1.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTTALK);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strNotify_1.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    if (!::g_strNotify_2.empty())
+                                                                                    {
+                                                                                        if (::g_strNotify_2.length() <= 190)
+                                                                                        {
+                                                                                            if (::g_strNotify_2.size() <= 190)
+                                                                                            {
+                                                                                                (*::g_engfuncs.pfnMessageBegin) (::g_bOneReliable ? MSG_ONE : MSG_ONE_UNRELIABLE, ::g_nTextMsg, nullptr, pEntity);
+                                                                                                {
+                                                                                                    (*::g_engfuncs.pfnWriteByte) (HUD_PRINTTALK);
+
+                                                                                                    (*::g_engfuncs.pfnWriteString) (::g_strNotify_2.c_str());
+                                                                                                }
+                                                                                                (*::g_engfuncs.pfnMessageEnd) ();
+                                                                                            }
+                                                                                        }
+                                                                                    }
+
+                                                                                    ::g_bShow[::g_nResetHudId] = true;
+                                                                                }
+                                                                            }
+                                                                        }
+
                                                                         else
                                                                         {
                                                                             if ((nTeam = *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs)) == 1)
@@ -10211,6 +11417,20 @@ void Hook_MessageEnd_Post() noexcept
                                                                     }
                                                                 }
 
+                                                                else if (!::g_strGameDir.compare("valve"))
+                                                                {
+                                                                    if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) > 0)
+                                                                    {
+                                                                        *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = { };
+                                                                        {
+                                                                            bAltered = true;
+                                                                            {
+                                                                                ::g_nDeaths[::g_nResetHudId] = { };
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+
                                                                 else
                                                                 {
                                                                     if (*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) > 0)
@@ -10231,6 +11451,20 @@ void Hook_MessageEnd_Post() noexcept
                                                                 if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
                                                                 {
                                                                     *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                    {
+                                                                        bAltered = true;
+                                                                        {
+                                                                            ::g_nDeaths[::g_nResetHudId] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            else if (!::g_strGameDir.compare("valve"))
+                                                            {
+                                                                if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                                                {
+                                                                    *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
                                                                     {
                                                                         bAltered = true;
                                                                         {
@@ -10287,6 +11521,20 @@ void Hook_MessageEnd_Post() noexcept
                                                                     }
                                                                 }
 
+                                                                else if (!::g_strGameDir.compare("valve"))
+                                                                {
+                                                                    if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) > 0)
+                                                                    {
+                                                                        *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = { };
+                                                                        {
+                                                                            bAltered = true;
+                                                                            {
+                                                                                ::g_nDeaths[::g_nResetHudId] = { };
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+
                                                                 else
                                                                 {
                                                                     if (*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs) > 0)
@@ -10307,6 +11555,20 @@ void Hook_MessageEnd_Post() noexcept
                                                                 if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
                                                                 {
                                                                     *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                    {
+                                                                        bAltered = true;
+                                                                        {
+                                                                            ::g_nDeaths[::g_nResetHudId] = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            else if (!::g_strGameDir.compare("valve"))
+                                                            {
+                                                                if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) > xTo(pEntity->v.frags, int))
+                                                                {
+                                                                    *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = (::std::max)(xTo(false, int), xTo(pEntity->v.frags, int));
                                                                     {
                                                                         bAltered = true;
                                                                         {
@@ -10356,6 +11618,17 @@ void Hook_MessageEnd_Post() noexcept
                                                                         }
                                                                     }
 
+                                                                    else if (!::g_strGameDir.compare("valve"))
+                                                                    {
+                                                                        if (!(*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs)))
+                                                                        {
+                                                                            ::g_nKills[::g_nResetHudId] = { };
+                                                                            {
+                                                                                ::g_nDeaths[::g_nResetHudId] = { };
+                                                                            }
+                                                                        }
+                                                                    }
+
                                                                     else
                                                                     {
                                                                         if (!(*((int*)pEntity->pvPrivateData + ::m_iDeaths + ::g_nOsOffs)))
@@ -10382,6 +11655,17 @@ void Hook_MessageEnd_Post() noexcept
                                                                 if (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) != ::g_nDeaths[::g_nResetHudId])
                                                                 {
                                                                     *((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs) = ::g_nDeaths[::g_nResetHudId];
+                                                                    {
+                                                                        bAltered = true;
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            else if (!::g_strGameDir.compare("valve"))
+                                                            {
+                                                                if (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) != ::g_nDeaths[::g_nResetHudId])
+                                                                {
+                                                                    *((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs) = ::g_nDeaths[::g_nResetHudId];
                                                                     {
                                                                         bAltered = true;
                                                                     }
@@ -10419,6 +11703,24 @@ void Hook_MessageEnd_Post() noexcept
                                                                                 (*::g_engfuncs.pfnWriteShort) (*((int*)pEntity->pvPrivateData + ::m_iDodDeaths + ::g_nOsOffs));
                                                                             }
                                                                             (*::g_engfuncs.pfnWriteByte) (xTo(true, int));
+                                                                        }
+                                                                        (*::g_engfuncs.pfnMessageEnd) ();
+                                                                    }
+                                                                }
+
+                                                                else if (!::g_strGameDir.compare("valve"))
+                                                                {
+                                                                    if (::g_nScoreInfo > 0)
+                                                                    {
+                                                                        (*::g_engfuncs.pfnMessageBegin) (::g_bAllReliable ? MSG_ALL : MSG_BROADCAST, ::g_nScoreInfo, nullptr, nullptr);
+                                                                        {
+                                                                            (*::g_engfuncs.pfnWriteByte) (::g_nResetHudId);
+                                                                            {
+                                                                                (*::g_engfuncs.pfnWriteShort) (pEntity->v.frags);
+                                                                                (*::g_engfuncs.pfnWriteShort) (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs));
+                                                                                (*::g_engfuncs.pfnWriteShort) ({ });
+                                                                                (*::g_engfuncs.pfnWriteShort) (::g_nTeam[::g_nResetHudId]);
+                                                                            }
                                                                         }
                                                                         (*::g_engfuncs.pfnMessageEnd) ();
                                                                     }
@@ -10847,10 +12149,421 @@ void Hook_MessageEnd_Post() noexcept
                                     {
                                         pFriendlyFire = (*::g_engfuncs.pfnCVarGetPointer) ("mp_friendlyfire");
                                         {
-                                            bConVars = true;
+                                            pTeamPlay = (*::g_engfuncs.pfnCVarGetPointer) ("mp_teamplay");
+                                            {
+                                                bConVars = true;
+                                            }
                                         }
                                     }
 
+                                    if (::g_strGameDir.compare("valve"))
+                                    {
+                                        if (!pFriendlyFire || !pFriendlyFire->value)
+                                        {
+                                            if (pEntity = ::INDEXENT(::g_nVictim))
+                                            {
+                                                if (!pEntity->free)
+                                                {
+                                                    if (pEntity->pvPrivateData)
+                                                    {
+                                                        if (!pEntity->serialnumber)
+                                                        {
+                                                            if (!(pEntity->v.flags & FL_DORMANT))
+                                                            {
+                                                                if (pEntity->v.flags & FL_CLIENT)
+                                                                {
+                                                                    ::g_nDeaths[::g_nVictim]++;
+                                                                    {
+                                                                        if (::g_bFixDeaths || ::g_bFixScore)
+                                                                        {
+                                                                            ::g_nDeaths[::g_nVictim] = ::ValClamp(::g_nDeaths[::g_nVictim], xTo(false, int), ::g_nKills[::g_nVictim]);
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            if (pEntity = ::INDEXENT(::g_nKiller))
+                                            {
+                                                if (!pEntity->free)
+                                                {
+                                                    if (pEntity->pvPrivateData)
+                                                    {
+                                                        if (!pEntity->serialnumber)
+                                                        {
+                                                            if (!(pEntity->v.flags & FL_DORMANT))
+                                                            {
+                                                                if (pEntity->v.flags & FL_CLIENT)
+                                                                {
+                                                                    ::g_nKills[::g_nKiller]++;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        else
+                                        {
+                                            pVictim = nullptr;
+                                            {
+                                                bSafe = { };
+                                            }
+
+                                            if (pEntity = ::INDEXENT(::g_nVictim))
+                                            {
+                                                if (!pEntity->free)
+                                                {
+                                                    if (pEntity->pvPrivateData)
+                                                    {
+                                                        if (!pEntity->serialnumber)
+                                                        {
+                                                            if (!(pEntity->v.flags & FL_DORMANT))
+                                                            {
+                                                                if (pEntity->v.flags & FL_CLIENT)
+                                                                {
+                                                                    ::g_nDeaths[::g_nVictim]++;
+                                                                    {
+                                                                        pVictim = pEntity;
+                                                                        {
+                                                                            bSafe = true;
+                                                                            {
+                                                                                if (::g_bFixDeaths || ::g_bFixScore)
+                                                                                {
+                                                                                    ::g_nDeaths[::g_nVictim] = ::ValClamp(::g_nDeaths[::g_nVictim], xTo(false, int), ::g_nKills[::g_nVictim]);
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            if (pEntity = ::INDEXENT(::g_nKiller))
+                                            {
+                                                if (!pEntity->free)
+                                                {
+                                                    if (pEntity->pvPrivateData)
+                                                    {
+                                                        if (!pEntity->serialnumber)
+                                                        {
+                                                            if (!(pEntity->v.flags & FL_DORMANT))
+                                                            {
+                                                                if (pEntity->v.flags & FL_CLIENT)
+                                                                {
+                                                                    if (::g_bRealScoreFriendly)
+                                                                    {
+                                                                        ::g_nKills[::g_nKiller]++;
+                                                                    }
+
+                                                                    else
+                                                                    {
+                                                                        if (bSafe)
+                                                                        {
+                                                                            if (pVictim)
+                                                                            {
+                                                                                if (!::g_strGameDir.compare("dod"))
+                                                                                {
+                                                                                    if ((*((char*)pVictim->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs) != *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs)) && (*((char*)pVictim->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs + 1) != *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs + 1)))
+                                                                                    {
+                                                                                        ::g_nKills[::g_nKiller]++;
+                                                                                    }
+
+                                                                                    else
+                                                                                    {
+                                                                                        if (::g_bFriendlyDecrease)
+                                                                                        {
+                                                                                            ::g_nKills[::g_nKiller]--;
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                else if (!::g_strGameDir.compare("valve"))
+                                                                                {
+                                                                                    if (::g_nTeam[::g_nVictim] != ::g_nTeam[::g_nKiller])
+                                                                                    {
+                                                                                        ::g_nKills[::g_nKiller]++;
+                                                                                    }
+
+                                                                                    else
+                                                                                    {
+                                                                                        if (::g_bFriendlyDecrease)
+                                                                                        {
+                                                                                            ::g_nKills[::g_nKiller]--;
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                else
+                                                                                {
+                                                                                    if (*((int*)pVictim->pvPrivateData + ::m_iTeam + ::g_nOsOffs) != *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs))
+                                                                                    {
+                                                                                        ::g_nKills[::g_nKiller]++;
+                                                                                    }
+
+                                                                                    else
+                                                                                    {
+                                                                                        if (::g_bFriendlyDecrease)
+                                                                                        {
+                                                                                            ::g_nKills[::g_nKiller]--;
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    else
+                                    {
+                                        bFriendlyFire = { };
+
+                                        if (pTeamPlay)
+                                        {
+                                            if (pFriendlyFire)
+                                            {
+                                                bFriendlyFire = (pTeamPlay->value && pFriendlyFire->value);
+                                            }
+                                        }
+
+                                        else
+                                        {
+                                            if (pFriendlyFire)
+                                            {
+                                                bFriendlyFire = (pFriendlyFire->value);
+                                            }
+                                        }
+
+                                        if (!bFriendlyFire)
+                                        {
+                                            if (pEntity = ::INDEXENT(::g_nVictim))
+                                            {
+                                                if (!pEntity->free)
+                                                {
+                                                    if (pEntity->pvPrivateData)
+                                                    {
+                                                        if (!pEntity->serialnumber)
+                                                        {
+                                                            if (!(pEntity->v.flags & FL_DORMANT))
+                                                            {
+                                                                if (pEntity->v.flags & FL_CLIENT)
+                                                                {
+                                                                    ::g_nDeaths[::g_nVictim]++;
+                                                                    {
+                                                                        if (::g_bFixDeaths || ::g_bFixScore)
+                                                                        {
+                                                                            ::g_nDeaths[::g_nVictim] = ::ValClamp(::g_nDeaths[::g_nVictim], xTo(false, int), ::g_nKills[::g_nVictim]);
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            if (pEntity = ::INDEXENT(::g_nKiller))
+                                            {
+                                                if (!pEntity->free)
+                                                {
+                                                    if (pEntity->pvPrivateData)
+                                                    {
+                                                        if (!pEntity->serialnumber)
+                                                        {
+                                                            if (!(pEntity->v.flags & FL_DORMANT))
+                                                            {
+                                                                if (pEntity->v.flags & FL_CLIENT)
+                                                                {
+                                                                    ::g_nKills[::g_nKiller]++;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        else
+                                        {
+                                            pVictim = nullptr;
+                                            {
+                                                bSafe = { };
+                                            }
+
+                                            if (pEntity = ::INDEXENT(::g_nVictim))
+                                            {
+                                                if (!pEntity->free)
+                                                {
+                                                    if (pEntity->pvPrivateData)
+                                                    {
+                                                        if (!pEntity->serialnumber)
+                                                        {
+                                                            if (!(pEntity->v.flags & FL_DORMANT))
+                                                            {
+                                                                if (pEntity->v.flags & FL_CLIENT)
+                                                                {
+                                                                    ::g_nDeaths[::g_nVictim]++;
+                                                                    {
+                                                                        pVictim = pEntity;
+                                                                        {
+                                                                            bSafe = true;
+                                                                            {
+                                                                                if (::g_bFixDeaths || ::g_bFixScore)
+                                                                                {
+                                                                                    ::g_nDeaths[::g_nVictim] = ::ValClamp(::g_nDeaths[::g_nVictim], xTo(false, int), ::g_nKills[::g_nVictim]);
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            if (pEntity = ::INDEXENT(::g_nKiller))
+                                            {
+                                                if (!pEntity->free)
+                                                {
+                                                    if (pEntity->pvPrivateData)
+                                                    {
+                                                        if (!pEntity->serialnumber)
+                                                        {
+                                                            if (!(pEntity->v.flags & FL_DORMANT))
+                                                            {
+                                                                if (pEntity->v.flags & FL_CLIENT)
+                                                                {
+                                                                    if (::g_bRealScoreFriendly)
+                                                                    {
+                                                                        ::g_nKills[::g_nKiller]++;
+                                                                    }
+
+                                                                    else
+                                                                    {
+                                                                        if (bSafe)
+                                                                        {
+                                                                            if (pVictim)
+                                                                            {
+                                                                                if (!::g_strGameDir.compare("dod"))
+                                                                                {
+                                                                                    if ((*((char*)pVictim->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs) != *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs)) && (*((char*)pVictim->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs + 1) != *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs + 1)))
+                                                                                    {
+                                                                                        ::g_nKills[::g_nKiller]++;
+                                                                                    }
+
+                                                                                    else
+                                                                                    {
+                                                                                        if (::g_bFriendlyDecrease)
+                                                                                        {
+                                                                                            ::g_nKills[::g_nKiller]--;
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                else if (!::g_strGameDir.compare("valve"))
+                                                                                {
+                                                                                    if (::g_nTeam[::g_nVictim] != ::g_nTeam[::g_nKiller])
+                                                                                    {
+                                                                                        ::g_nKills[::g_nKiller]++;
+                                                                                    }
+
+                                                                                    else
+                                                                                    {
+                                                                                        if (::g_bFriendlyDecrease)
+                                                                                        {
+                                                                                            ::g_nKills[::g_nKiller]--;
+                                                                                        }
+                                                                                    }
+                                                                                }
+
+                                                                                else
+                                                                                {
+                                                                                    if (*((int*)pVictim->pvPrivateData + ::m_iTeam + ::g_nOsOffs) != *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs))
+                                                                                    {
+                                                                                        ::g_nKills[::g_nKiller]++;
+                                                                                    }
+
+                                                                                    else
+                                                                                    {
+                                                                                        if (::g_bFriendlyDecrease)
+                                                                                        {
+                                                                                            ::g_nKills[::g_nKiller]--;
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    ::g_bDeathMsg = { };
+                    {
+                        ::g_nDeathMsgByte = { };
+                        {
+                            ::g_nVictim = { };
+                            {
+                                ::g_nKiller = { };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    else
+    {
+        if (::g_nDeathMsg > 0)
+        {
+            if (::g_bDeathMsg)
+            {
+                if (::g_nVictim > 0)
+                {
+                    if (::g_nKiller > 0)
+                    {
+                        if (::g_bRealScore)
+                        {
+                            if (::g_nVictim != ::g_nKiller)
+                            {
+                                if (!bConVars)
+                                {
+                                    pFriendlyFire = (*::g_engfuncs.pfnCVarGetPointer) ("mp_friendlyfire");
+                                    {
+                                        pTeamPlay = (*::g_engfuncs.pfnCVarGetPointer) ("mp_teamplay");
+                                        {
+                                            bConVars = true;
+                                        }
+                                    }
+                                }
+
+                                if (::g_strGameDir.compare("valve"))
+                                {
                                     if (!pFriendlyFire || !pFriendlyFire->value)
                                     {
                                         if (pEntity = ::INDEXENT(::g_nVictim))
@@ -10978,6 +12691,212 @@ void Hook_MessageEnd_Post() noexcept
                                                                                 }
                                                                             }
 
+                                                                            else if (!::g_strGameDir.compare("valve"))
+                                                                            {
+                                                                                if (::g_nTeam[::g_nVictim] != ::g_nTeam[::g_nKiller])
+                                                                                {
+                                                                                    ::g_nKills[::g_nKiller]++;
+                                                                                }
+
+                                                                                else
+                                                                                {
+                                                                                    if (::g_bFriendlyDecrease)
+                                                                                    {
+                                                                                        ::g_nKills[::g_nKiller]--;
+                                                                                    }
+                                                                                }
+                                                                            }
+
+                                                                            else
+                                                                            {
+                                                                                if (*((int*)pVictim->pvPrivateData + ::m_iTeam + ::g_nOsOffs) != *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs))
+                                                                                {
+                                                                                    ::g_nKills[::g_nKiller]++;
+                                                                                }
+
+                                                                                else
+                                                                                {
+                                                                                    if (::g_bFriendlyDecrease)
+                                                                                    {
+                                                                                        ::g_nKills[::g_nKiller]--;
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                else
+                                {
+                                    bFriendlyFire = { };
+
+                                    if (pTeamPlay)
+                                    {
+                                        if (pFriendlyFire)
+                                        {
+                                            bFriendlyFire = (pTeamPlay->value && pFriendlyFire->value);
+                                        }
+                                    }
+
+                                    else
+                                    {
+                                        if (pFriendlyFire)
+                                        {
+                                            bFriendlyFire = (pFriendlyFire->value);
+                                        }
+                                    }
+
+                                    if (!bFriendlyFire)
+                                    {
+                                        if (pEntity = ::INDEXENT(::g_nVictim))
+                                        {
+                                            if (!pEntity->free)
+                                            {
+                                                if (pEntity->pvPrivateData)
+                                                {
+                                                    if (!pEntity->serialnumber)
+                                                    {
+                                                        if (!(pEntity->v.flags & FL_DORMANT))
+                                                        {
+                                                            if (pEntity->v.flags & FL_CLIENT)
+                                                            {
+                                                                ::g_nDeaths[::g_nVictim]++;
+                                                                {
+                                                                    if (::g_bFixDeaths || ::g_bFixScore)
+                                                                    {
+                                                                        ::g_nDeaths[::g_nVictim] = ::ValClamp(::g_nDeaths[::g_nVictim], xTo(false, int), ::g_nKills[::g_nVictim]);
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if (pEntity = ::INDEXENT(::g_nKiller))
+                                        {
+                                            if (!pEntity->free)
+                                            {
+                                                if (pEntity->pvPrivateData)
+                                                {
+                                                    if (!pEntity->serialnumber)
+                                                    {
+                                                        if (!(pEntity->v.flags & FL_DORMANT))
+                                                        {
+                                                            if (pEntity->v.flags & FL_CLIENT)
+                                                            {
+                                                                ::g_nKills[::g_nKiller]++;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    else
+                                    {
+                                        pVictim = nullptr;
+                                        {
+                                            bSafe = { };
+                                        }
+
+                                        if (pEntity = ::INDEXENT(::g_nVictim))
+                                        {
+                                            if (!pEntity->free)
+                                            {
+                                                if (pEntity->pvPrivateData)
+                                                {
+                                                    if (!pEntity->serialnumber)
+                                                    {
+                                                        if (!(pEntity->v.flags & FL_DORMANT))
+                                                        {
+                                                            if (pEntity->v.flags & FL_CLIENT)
+                                                            {
+                                                                ::g_nDeaths[::g_nVictim]++;
+                                                                {
+                                                                    pVictim = pEntity;
+                                                                    {
+                                                                        bSafe = true;
+                                                                        {
+                                                                            if (::g_bFixDeaths || ::g_bFixScore)
+                                                                            {
+                                                                                ::g_nDeaths[::g_nVictim] = ::ValClamp(::g_nDeaths[::g_nVictim], xTo(false, int), ::g_nKills[::g_nVictim]);
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        if (pEntity = ::INDEXENT(::g_nKiller))
+                                        {
+                                            if (!pEntity->free)
+                                            {
+                                                if (pEntity->pvPrivateData)
+                                                {
+                                                    if (!pEntity->serialnumber)
+                                                    {
+                                                        if (!(pEntity->v.flags & FL_DORMANT))
+                                                        {
+                                                            if (pEntity->v.flags & FL_CLIENT)
+                                                            {
+                                                                if (::g_bRealScoreFriendly)
+                                                                {
+                                                                    ::g_nKills[::g_nKiller]++;
+                                                                }
+
+                                                                else
+                                                                {
+                                                                    if (bSafe)
+                                                                    {
+                                                                        if (pVictim)
+                                                                        {
+                                                                            if (!::g_strGameDir.compare("dod"))
+                                                                            {
+                                                                                if ((*((char*)pVictim->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs) != *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs)) && (*((char*)pVictim->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs + 1) != *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs + 1)))
+                                                                                {
+                                                                                    ::g_nKills[::g_nKiller]++;
+                                                                                }
+
+                                                                                else
+                                                                                {
+                                                                                    if (::g_bFriendlyDecrease)
+                                                                                    {
+                                                                                        ::g_nKills[::g_nKiller]--;
+                                                                                    }
+                                                                                }
+                                                                            }
+
+                                                                            else if (!::g_strGameDir.compare("valve"))
+                                                                            {
+                                                                                if (::g_nTeam[::g_nVictim] != ::g_nTeam[::g_nKiller])
+                                                                                {
+                                                                                    ::g_nKills[::g_nKiller]++;
+                                                                                }
+
+                                                                                else
+                                                                                {
+                                                                                    if (::g_bFriendlyDecrease)
+                                                                                    {
+                                                                                        ::g_nKills[::g_nKiller]--;
+                                                                                    }
+                                                                                }
+                                                                            }
+
                                                                             else
                                                                             {
                                                                                 if (*((int*)pVictim->pvPrivateData + ::m_iTeam + ::g_nOsOffs) != *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs))
@@ -11007,199 +12926,6 @@ void Hook_MessageEnd_Post() noexcept
                             }
                         }
                     }
-
-                    ::g_bDeathMsg = { };
-                    {
-                        ::g_nDeathMsgByte = { };
-                        {
-                            ::g_nVictim = { };
-                            {
-                                ::g_nKiller = { };
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    else
-    {
-        if (::g_nDeathMsg > 0)
-        {
-            if (::g_bDeathMsg)
-            {
-                if (::g_nVictim > 0)
-                {
-                    if (::g_nKiller > 0)
-                    {
-                        if (::g_bRealScore)
-                        {
-                            if (::g_nVictim != ::g_nKiller)
-                            {
-                                if (!bConVars)
-                                {
-                                    pFriendlyFire = (*::g_engfuncs.pfnCVarGetPointer) ("mp_friendlyfire");
-                                    {
-                                        bConVars = true;
-                                    }
-                                }
-
-                                if (!pFriendlyFire || !pFriendlyFire->value)
-                                {
-                                    if (pEntity = ::INDEXENT(::g_nVictim))
-                                    {
-                                        if (!pEntity->free)
-                                        {
-                                            if (pEntity->pvPrivateData)
-                                            {
-                                                if (!pEntity->serialnumber)
-                                                {
-                                                    if (!(pEntity->v.flags & FL_DORMANT))
-                                                    {
-                                                        if (pEntity->v.flags & FL_CLIENT)
-                                                        {
-                                                            ::g_nDeaths[::g_nVictim]++;
-                                                            {
-                                                                if (::g_bFixDeaths || ::g_bFixScore)
-                                                                {
-                                                                    ::g_nDeaths[::g_nVictim] = ::ValClamp(::g_nDeaths[::g_nVictim], xTo(false, int), ::g_nKills[::g_nVictim]);
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if (pEntity = ::INDEXENT(::g_nKiller))
-                                    {
-                                        if (!pEntity->free)
-                                        {
-                                            if (pEntity->pvPrivateData)
-                                            {
-                                                if (!pEntity->serialnumber)
-                                                {
-                                                    if (!(pEntity->v.flags & FL_DORMANT))
-                                                    {
-                                                        if (pEntity->v.flags & FL_CLIENT)
-                                                        {
-                                                            ::g_nKills[::g_nKiller]++;
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                else
-                                {
-                                    pVictim = nullptr;
-                                    {
-                                        bSafe = { };
-                                    }
-
-                                    if (pEntity = ::INDEXENT(::g_nVictim))
-                                    {
-                                        if (!pEntity->free)
-                                        {
-                                            if (pEntity->pvPrivateData)
-                                            {
-                                                if (!pEntity->serialnumber)
-                                                {
-                                                    if (!(pEntity->v.flags & FL_DORMANT))
-                                                    {
-                                                        if (pEntity->v.flags & FL_CLIENT)
-                                                        {
-                                                            ::g_nDeaths[::g_nVictim]++;
-                                                            {
-                                                                pVictim = pEntity;
-                                                                {
-                                                                    bSafe = true;
-                                                                    {
-                                                                        if (::g_bFixDeaths || ::g_bFixScore)
-                                                                        {
-                                                                            ::g_nDeaths[::g_nVictim] = ::ValClamp(::g_nDeaths[::g_nVictim], xTo(false, int), ::g_nKills[::g_nVictim]);
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if (pEntity = ::INDEXENT(::g_nKiller))
-                                    {
-                                        if (!pEntity->free)
-                                        {
-                                            if (pEntity->pvPrivateData)
-                                            {
-                                                if (!pEntity->serialnumber)
-                                                {
-                                                    if (!(pEntity->v.flags & FL_DORMANT))
-                                                    {
-                                                        if (pEntity->v.flags & FL_CLIENT)
-                                                        {
-                                                            if (::g_bRealScoreFriendly)
-                                                            {
-                                                                ::g_nKills[::g_nKiller]++;
-                                                            }
-
-                                                            else
-                                                            {
-                                                                if (bSafe)
-                                                                {
-                                                                    if (pVictim)
-                                                                    {
-                                                                        if (!::g_strGameDir.compare("dod"))
-                                                                        {
-                                                                            if ((*((char*)pVictim->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs) != *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs)) && (*((char*)pVictim->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs + 1) != *((char*)pEntity->pvPrivateData + ::m_iDodTeam + ::g_nOsOffs + 1)))
-                                                                            {
-                                                                                ::g_nKills[::g_nKiller]++;
-                                                                            }
-
-                                                                            else
-                                                                            {
-                                                                                if (::g_bFriendlyDecrease)
-                                                                                {
-                                                                                    ::g_nKills[::g_nKiller]--;
-                                                                                }
-                                                                            }
-                                                                        }
-
-                                                                        else
-                                                                        {
-                                                                            if (*((int*)pVictim->pvPrivateData + ::m_iTeam + ::g_nOsOffs) != *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs))
-                                                                            {
-                                                                                ::g_nKills[::g_nKiller]++;
-                                                                            }
-
-                                                                            else
-                                                                            {
-                                                                                if (::g_bFriendlyDecrease)
-                                                                                {
-                                                                                    ::g_nKills[::g_nKiller]--;
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
 
                 ::g_bDeathMsg = { };
@@ -11210,6 +12936,23 @@ void Hook_MessageEnd_Post() noexcept
                         {
                             ::g_nKiller = { };
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    if (::g_nScoreInfo > 0)
+    {
+        if (::g_bScoreInfo)
+        {
+            ::g_bScoreInfo = { };
+            {
+                ::g_nScoreInfoByte = { };
+                {
+                    ::g_nScoreInfoShort = { };
+                    {
+                        ::g_nScoreInfoId = { };
                     }
                 }
             }
@@ -11758,6 +13501,11 @@ void* operator new [](unsigned int uMem)
                                             }
                                         }
 
+                                        else if (!::g_strGameDir.compare("valve"))
+                                        {
+                                            nPlaying++;
+                                        }
+
                                         else
                                         {
                                             if ((nTeam = *((int*)pEntity->pvPrivateData + ::m_iTeam + ::g_nOsOffs)) == 1)
@@ -11815,4 +13563,366 @@ void* operator new [](unsigned int uMem)
         }
 
         return nConnected;
+    }
+
+    ::std::vector < ::std::string > explStr(::std::string strBuffer) noexcept
+    {
+        static ::std::vector < ::std::string > vecItems{ };
+
+        static ::std::string strItem{ };
+
+        static unsigned int uPos{ }, uIter{ };
+
+        vecItems.clear();
+
+        if (strBuffer.empty())
+        {
+            return vecItems;
+        }
+
+        uPos = strBuffer.find_first_of(",;/|\\& \t");
+        {
+            if (uPos == ::std::string::npos)
+            {
+                return { };
+            }
+        }
+
+        do
+        {
+            for (uIter = { }; uIter < uPos; uIter++)
+            {
+                if (strBuffer[uIter] != '\n' && strBuffer[uIter] != '\r' && strBuffer[uIter] != '\t' && strBuffer[uIter] != ' ' &&
+                    strBuffer[uIter] != '\v' && strBuffer[uIter] != '\f' && strBuffer[uIter] != '\a' && strBuffer[uIter] != '\b' &&
+                    strBuffer[uIter] != ',' && strBuffer[uIter] != ';' && strBuffer[uIter] != '/' && strBuffer[uIter] != '|' &&
+                    strBuffer[uIter] != '\\' && strBuffer[uIter] != '&')
+                {
+                    strItem += strBuffer[uIter];
+                }
+            }
+
+            if (!strItem.empty())
+            {
+                vecItems.emplace_back(strItem);
+                {
+                    strItem.clear();
+                }
+            }
+
+            strBuffer.erase(strBuffer.begin(), strBuffer.begin() + uPos + xTo(true, unsigned int));
+        }
+
+        while ((uPos = strBuffer.find_first_of(",;/|\\& \t")) != ::std::string::npos);
+
+        if (!strBuffer.empty())
+        {
+            for (uIter = { }; uIter < strBuffer.length(); uIter++)
+            {
+                if (strBuffer[uIter] != '\n' && strBuffer[uIter] != '\r' && strBuffer[uIter] != '\t' && strBuffer[uIter] != ' ' &&
+                    strBuffer[uIter] != '\v' && strBuffer[uIter] != '\f' && strBuffer[uIter] != '\a' && strBuffer[uIter] != '\b' &&
+                    strBuffer[uIter] != ',' && strBuffer[uIter] != ';' && strBuffer[uIter] != '/' && strBuffer[uIter] != '|' &&
+                    strBuffer[uIter] != '\\' && strBuffer[uIter] != '&')
+                {
+                    strItem += strBuffer[uIter];
+                }
+            }
+
+            if (!strItem.empty())
+            {
+                vecItems.emplace_back(strItem);
+                {
+                    strItem.clear();
+                }
+            }
+
+            strBuffer.clear();
+        }
+
+        return vecItems;
+    }
+
+    ::std::string pickRndItem(::std::string strItems) noexcept
+    {
+        static ::std::vector < ::std::string > vecItems{ };
+
+        static ::std::string strItem{ }, strRandomItem{ };
+
+        static unsigned int uPos{ }, uIter{ };
+
+        if (strItems.empty())
+        {
+            return { };
+        }
+
+        uPos = strItems.find_first_of(",;/|\\& \t");
+        {
+            if (uPos == ::std::string::npos)
+            {
+                return { };
+            }
+        }
+
+        do
+        {
+            for (uIter = { }; uIter < uPos; uIter++)
+            {
+                if (strItems[uIter] != '\n' && strItems[uIter] != '\r' && strItems[uIter] != '\t' && strItems[uIter] != ' ' &&
+                    strItems[uIter] != '\v' && strItems[uIter] != '\f' && strItems[uIter] != '\a' && strItems[uIter] != '\b' &&
+                    strItems[uIter] != ',' && strItems[uIter] != ';' && strItems[uIter] != '/' && strItems[uIter] != '|' &&
+                    strItems[uIter] != '\\' && strItems[uIter] != '&')
+                {
+                    strItem += strItems[uIter];
+                }
+            }
+
+            if (!strItem.empty())
+            {
+                vecItems.emplace_back(strItem);
+                {
+                    strItem.clear();
+                }
+            }
+
+            strItems.erase(strItems.begin(), strItems.begin() + uPos + xTo(true, unsigned int));
+        }
+
+        while ((uPos = strItems.find_first_of(",;/|\\& \t")) != ::std::string::npos);
+
+        if (!strItems.empty())
+        {
+            for (uIter = { }; uIter < strItems.length(); uIter++)
+            {
+                if (strItems[uIter] != '\n' && strItems[uIter] != '\r' && strItems[uIter] != '\t' && strItems[uIter] != ' ' &&
+                    strItems[uIter] != '\v' && strItems[uIter] != '\f' && strItems[uIter] != '\a' && strItems[uIter] != '\b' &&
+                    strItems[uIter] != ',' && strItems[uIter] != ';' && strItems[uIter] != '/' && strItems[uIter] != '|' &&
+                    strItems[uIter] != '\\' && strItems[uIter] != '&')
+                {
+                    strItem += strItems[uIter];
+                }
+            }
+
+            if (!strItem.empty())
+            {
+                vecItems.emplace_back(strItem);
+                {
+                    strItem.clear();
+                }
+            }
+
+            strItems.clear();
+        }
+
+        if (!vecItems.empty())
+        {
+            strRandomItem = vecItems[xTo(::rndNum({ }, xTo((vecItems.size() - xTo(true, unsigned int)), long long)), unsigned int)];
+            {
+                vecItems.clear();
+            }
+
+            return strRandomItem;
+        }
+
+        return { };
+    }
+
+    unsigned long long allocIdByStr(::std::string strItem) noexcept
+    {
+        static ::std::vector < ::std::string > vecItems{ };
+
+        static ::std::vector < unsigned long long > vecIds{ };
+
+        static unsigned int uIter{ };
+
+        if (::g_bReAlloc)
+        {
+            ::g_bReAlloc = { };
+            {
+                vecItems.clear();
+                {
+                    vecItems.shrink_to_fit();
+                    {
+                        vecIds.clear();
+                        {
+                            vecIds.shrink_to_fit();
+                        }
+                    }
+                }
+            }
+        }
+
+        if (strItem.empty())
+        {
+            return { };
+        }
+
+        if (vecItems.empty())
+        {
+            vecItems.emplace_back(strItem);
+            {
+                vecIds.emplace_back(((*::g_engfuncs.pfnAllocString) (strItem.c_str())));
+                {
+                    return (vecIds[{ }]);
+                }
+            }
+        }
+
+        for (uIter = { }; uIter < vecItems.size(); uIter++)
+        {
+            if (!(vecItems[uIter].compare(strItem)))
+            {
+                return (vecIds[uIter]);
+            }
+        }
+
+        vecItems.emplace_back(strItem);
+        {
+            vecIds.emplace_back(((*::g_engfuncs.pfnAllocString) (strItem.c_str())));
+        }
+
+        return (vecIds[(vecIds.size() - xTo(true, unsigned int))]);
+    }
+
+    bool giveGameItem(::std::string strItem, ::edict_t* pEntity) noexcept
+    {
+        static ::edict_t* pItem{ };
+        {
+            static int nSolid{ };
+            {
+                pItem = (*::g_engfuncs.pfnCreateNamedEntity) (::allocIdByStr(strItem));
+                {
+                    if (pItem)
+                    {
+                        pItem->v.origin = pEntity->v.origin;
+                        {
+                            pItem->v.spawnflags |= 1073741824;
+                            {
+                                ::gpGamedllFuncs->dllapi_table->pfnSpawn(pItem);
+                                {
+                                    nSolid = pItem->v.solid;
+                                    {
+                                        ::gpGamedllFuncs->dllapi_table->pfnTouch(pItem, pEntity);
+                                        {
+                                            if (pItem->v.solid == nSolid)
+                                            {
+                                                (*::g_engfuncs.pfnRemoveEntity) (pItem);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return { };
+    }
+
+    long long rndNum(long long llMin, long long llMax) noexcept
+    {
+        static long long llStamp{ }, llRes{ };
+
+        static ::std::random_device rndDev{ };
+
+        static ::std::mt19937_64 rndGen(rndDev());
+
+        if (llMin == llMax)
+        {
+            return (llStamp = llMin);
+        }
+
+        ::std::uniform_int_distribution < long long > rndItm(llMin, llMax);
+
+        if (llMin < llMax)
+        {
+            llRes = rndItm(rndGen);
+
+            if (llRes == llStamp)
+            {
+                while (llRes == llStamp)
+                {
+                    llRes = rndItm(rndGen);
+                }
+            }
+
+            return (llStamp = llRes);
+        }
+
+        return (llStamp = rndItm(rndGen));
+    }
+
+    long double rndReal(long double lfMin, long double lfMax) noexcept
+    {
+        static long double lfStamp{ }, lfRes{ };
+
+        static ::std::random_device rndDev{ };
+
+        static ::std::mt19937_64 rndGen(rndDev());
+
+        if (lfMin == lfMax)
+        {
+            return (lfStamp = lfMin);
+        }
+
+        ::std::uniform_real_distribution < long double > rndItm(lfMin, lfMax);
+
+        if (lfMin < lfMax)
+        {
+            lfRes = rndItm(rndGen);
+
+            if (lfRes == lfStamp)
+            {
+                while (lfRes == lfStamp)
+                {
+                    lfRes = rndItm(rndGen);
+                }
+            }
+
+            return (lfStamp = lfRes);
+        }
+
+        return (lfStamp = rndItm(rndGen));
+    }
+
+    ::std::string& makeStrLwr(::std::string& strStr) noexcept
+    {
+        if (!strStr.empty())
+        {
+            ::std::transform(strStr.begin(), strStr.end(), strStr.begin(), ::tolower);
+        }
+
+        return strStr;
+    }
+
+    ::std::string& makeStrUpr(::std::string& strStr) noexcept
+    {
+        if (!strStr.empty())
+        {
+            ::std::transform(strStr.begin(), strStr.end(), strStr.begin(), ::toupper);
+        }
+
+        return strStr;
+    }
+
+    ::std::string strLwr(::std::string strStr) noexcept
+    {
+        if (!strStr.empty())
+        {
+            ::std::transform(strStr.begin(), strStr.end(), strStr.begin(), ::tolower);
+        }
+
+        return strStr;
+    }
+
+    ::std::string strUpr(::std::string strStr) noexcept
+    {
+        if (!strStr.empty())
+        {
+            ::std::transform(strStr.begin(), strStr.end(), strStr.begin(), ::toupper);
+        }
+
+        return strStr;
     }

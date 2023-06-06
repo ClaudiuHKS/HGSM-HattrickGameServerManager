@@ -8,7 +8,7 @@
             {
                 "competitive"
                 {
-                    "maxplayers"    "512"
+                    "maxplayers"    "32"
 
                     "exec"
                     {

@@ -1,0 +1,8 @@
+game "Half-Life"
+startmap "c0a0"
+trainmap "t0a0"
+mpentity "info_player_deathmatch"
+gamedll "addons\metamod\dlls\metamod.dll"
+gamedll_linux "addons/metamod/dlls/metamod.so"
+secure "1"
+type "singleplayer_only"

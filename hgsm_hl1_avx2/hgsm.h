@@ -4,6 +4,7 @@
 #include "nlohmann/json.hpp"
 
 #include <fstream>
+#include <random>
 
 #ifndef WIN32
 
@@ -82,6 +83,8 @@ extern ::std::string g_strWelcome_6;
 extern ::std::string g_strNotify_1;
 extern ::std::string g_strNotify_2;
 
+extern ::std::string g_strSpawnItems;
+
 #ifdef WIN32
 
 extern ::HWND__* g_pWnd;
@@ -93,18 +96,23 @@ extern bool g_bShow[48];
 extern bool g_bHide[48];
 extern bool g_bArmor[48];
 extern bool g_bRadar[48];
+extern bool g_bEquip[48];
 
 extern bool g_bAttached;
+
+extern bool g_bReAlloc;
 
 extern bool g_bLateLoaded;
 extern bool g_bNoReturn;
 
 extern bool g_bResetHud;
 extern bool g_bDeathMsg;
+extern bool g_bScoreInfo;
 
 extern bool g_bNoWeapons;
 
 extern bool g_bStripper;
+extern bool g_bAdder;
 
 extern bool g_bKvEditor;
 extern bool g_bKvAdder;
@@ -114,6 +122,8 @@ extern bool g_bHideMoney;
 extern bool g_bHideTimer;
 extern bool g_bHideFlash;
 
+extern bool g_bEquipAmmo;
+extern bool g_bEquipAmmoNade;
 extern bool g_bRealScoreFriendly;
 extern bool g_bFriendlyDecrease;
 extern bool g_bRealScore;
@@ -132,6 +142,8 @@ extern bool g_bMsgsRcvd;
 extern int g_nDeaths[48];
 extern int g_nKills[48];
 
+extern int g_nTeam[48];
+
 extern int g_nDeathMsg;
 extern int g_nScoreShort;
 extern int g_nTextMsg;
@@ -146,8 +158,12 @@ extern int g_nArmor;
 extern int g_nTicks;
 
 extern int g_nResetHudId;
+extern int g_nScoreInfoId;
 
 extern int g_nDeathMsgByte;
+extern int g_nScoreInfoByte;
+
+extern int g_nScoreInfoShort;
 
 extern int g_nOsOffs;
 
@@ -156,6 +172,9 @@ extern int g_nVictim;
 
 extern int m_iWindows;
 extern int m_iLinux;
+extern int m_iHlWeapVolume;
+extern int m_iHlPrevItem;
+extern int m_iHlDeaths;
 extern int m_iDodTeam;
 extern int m_iDodScore;
 extern int m_iDodDeaths;
@@ -210,10 +229,12 @@ void Hook_MessageBegin_Post(int, int, const float*, ::edict_t*) noexcept;
 #ifdef WIN32
 
 constexpr void Hook_WriteByte_Post(int) noexcept;
+constexpr void Hook_WriteShort_Post(int) noexcept;
 
 #else
 
 void Hook_WriteByte_Post(int) noexcept;
+void Hook_WriteShort_Post(int) noexcept;
 
 #endif
 
@@ -274,3 +295,20 @@ void MultiMediaFeatureTryDetach() noexcept;
 
 int numUsersPlaying(int = -1) noexcept;
 int numUsersConnected(int = -1) noexcept;
+
+::std::string pickRndItem(::std::string) noexcept;
+
+::std::vector < ::std::string > explStr(::std::string) noexcept;
+
+unsigned long long allocIdByStr(::std::string) noexcept;
+
+bool giveGameItem(::std::string, ::edict_t*) noexcept;
+
+long long rndNum(long long, long long) noexcept;
+long double rndReal(long double, long double) noexcept;
+
+::std::string& makeStrLwr(::std::string&) noexcept;
+::std::string& makeStrUpr(::std::string&) noexcept;
+
+::std::string strLwr(::std::string) noexcept;
+::std::string strUpr(::std::string) noexcept;

@@ -1,0 +1,39 @@
+"GameModes_Server.txt"
+{
+    "gameTypes"
+    {
+        "classic"
+        {
+            "gameModes"
+            {
+                "competitive"
+                {
+                    "maxplayers"    "32"
+
+                    "exec"
+                    {
+                        "exec"      "server.cfg"
+                    }
+
+                    "mapgroupsMP"
+                    {
+                        "crossfire" ""
+                    }
+                }
+            }
+        }
+    }
+
+    "mapgroups"
+    {
+        "crossfire"
+        {
+            "name"          "crossfire"
+
+            "maps"
+            {
+                "crossfire" ""
+            }
+        }
+    }
+}

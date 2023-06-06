@@ -1,0 +1,1 @@
+START /HIGH HLDS.EXE -pingboost 64 +pingboost 64 -usercon +usercon -nohltv +nohltv -nobots +nobots -ip 192.168.100.2 +ip 192.168.100.2 -hushasserts +hushasserts -threads 8 +threads 8 -high +high -console +console -game valve +game valve -map crossfire +map crossfire -maxplayers 32 +maxplayers 32 -tickrate 512 +tickrate 512 -port 27195 +port 27195 -exec server.cfg +exec server.cfg
