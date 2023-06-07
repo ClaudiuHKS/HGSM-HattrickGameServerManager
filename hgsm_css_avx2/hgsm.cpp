@@ -77,6 +77,7 @@ bool g_bHooked{ };
 bool g_bEvHooked{ };
 bool g_bNoReturn{ };
 
+bool g_bRegenerate{ };
 bool g_bRealScore{ };
 bool g_bHideRadar{ };
 bool g_bZeroMoney{ };
@@ -100,6 +101,7 @@ int g_nTicks{ 50, };
 
 float g_fIntervalPerTick{ };
 
+int m_iHealth{ }, m_iHealthSize{ };
 int m_iDeaths{ }, m_iDeathsSize{ };
 int m_iFrags{ }, m_iFragsSize{ };
 
@@ -1355,6 +1357,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
             ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
             ::std::printf("'Zero Money' Is Now '%s'\n", ::g_bZeroMoney ? "TRUE" : "FALSE");
             ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
+            ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
             ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
             ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
@@ -1413,6 +1416,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                     ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
                     ::std::printf("'Zero Money' Is Now '%s'\n", ::g_bZeroMoney ? "TRUE" : "FALSE");
                     ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
+                    ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
                     ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                     ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
                     ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
@@ -1480,6 +1484,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                         ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
                         ::std::printf("'Zero Money' Is Now '%s'\n", ::g_bZeroMoney ? "TRUE" : "FALSE");
                         ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
+                        ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
                         ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                         ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
                         ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
@@ -1537,6 +1542,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                             ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
                             ::std::printf("'Zero Money' Is Now '%s'\n", ::g_bZeroMoney ? "TRUE" : "FALSE");
                             ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
+                            ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
                             ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                             ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
                             ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
@@ -1594,6 +1600,7 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                                 ::std::printf("'Fix Deaths' Is Now '%s'\n", ::g_bFixDeaths ? "TRUE" : "FALSE");
                                 ::std::printf("'Zero Money' Is Now '%s'\n", ::g_bZeroMoney ? "TRUE" : "FALSE");
                                 ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
+                                ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
                                 ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                                 ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
                                 ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
@@ -1795,6 +1802,24 @@ float ::MySmmPlugin::Hook_GetTickInterval() const noexcept
                             ::g_bHideRadar = jsTree["Hide Radar"].get < bool >();
                             {
                                 ::std::printf("'Hide Radar' Is Now '%s'\n", ::g_bHideRadar ? "TRUE" : "FALSE");
+                            }
+                        }
+
+                        if (jsTree["Regenerate"].empty())
+                        {
+                            ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
+                        }
+
+                        else if (!jsTree["Regenerate"].is_boolean())
+                        {
+                            ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
+                        }
+
+                        else
+                        {
+                            ::g_bRegenerate = jsTree["Regenerate"].get < bool >();
+                            {
+                                ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
                             }
                         }
 
@@ -4390,7 +4415,7 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
     static bool bOffs{ }, bUpdate{ }, bMsgs{ };
     static int nPlayer{ }, nIter{ }, nHealth{ }, nFrags{ };
     static const char* pszServerClassName{ };
-    static long long llTime{ }, llStamp{ };
+    static long long llTime{ }, llStamp{ }, llRegenStamp[80]{ };
 
     static ::std::string strCmd{ };
 
@@ -4516,6 +4541,17 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
                                                         {
                                                             if (pDataMap = ::FindDataMap(pBaseEntity))
                                                             {
+                                                                if (::FindDataMapInfo(pDataMap, "m_iHealth", &dataTableInfo))
+                                                                {
+                                                                    if (dataTableInfo.pTypeDescription)
+                                                                    {
+                                                                        if ((::m_iHealthSize = ::DataSizeByFieldType(dataTableInfo.pTypeDescription->fieldType, dataTableInfo.pTypeDescription->flags)) > 0)
+                                                                        {
+                                                                            ::m_iHealth = dataTableInfo.uOffs;
+                                                                        }
+                                                                    }
+                                                                }
+
                                                                 if (::FindDataMapInfo(pDataMap, "m_iDeaths", &dataTableInfo))
                                                                 {
                                                                     if (dataTableInfo.pTypeDescription)
@@ -5559,7 +5595,43 @@ void ::MySmmPlugin::Hook_GameFrame_Post(bool) noexcept
 
                                                             if (!pPlayerInfo->IsDead())
                                                             {
-                                                                if ((nHealth = pPlayerInfo->GetHealth()) >= 100)
+                                                                if ((nHealth = pPlayerInfo->GetHealth()) > 0)
+                                                                {
+                                                                    if (::g_bRegenerate)
+                                                                    {
+                                                                        if (nHealth < 100)
+                                                                        {
+                                                                            if (::m_iHealth)
+                                                                            {
+                                                                                llTime = ::std::time(nullptr);
+                                                                                {
+                                                                                    if ((llTime - llRegenStamp[nPlayer]) > 0)
+                                                                                    {
+                                                                                        llRegenStamp[nPlayer] = llTime;
+                                                                                        {
+                                                                                            if (::m_iHealthSize >= 17)
+                                                                                            {
+                                                                                                *(signed int*)((unsigned char*)pBaseEntity + ::m_iHealth) += 1;
+                                                                                            }
+
+                                                                                            else if (::m_iHealthSize >= 9)
+                                                                                            {
+                                                                                                *(signed short*)((unsigned char*)pBaseEntity + ::m_iHealth) += 1;
+                                                                                            }
+
+                                                                                            else
+                                                                                            {
+                                                                                                *(signed char*)((unsigned char*)pBaseEntity + ::m_iHealth) += 1;
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                if (nHealth >= 100)
                                                                 {
                                                                     if (pPlayerInfo->GetArmorValue() < 100)
                                                                     {

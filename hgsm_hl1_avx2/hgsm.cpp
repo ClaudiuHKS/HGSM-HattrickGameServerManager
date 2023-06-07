@@ -91,6 +91,7 @@ bool g_bHideMoney{ };
 bool g_bHideTimer{ };
 bool g_bHideFlash{ };
 
+bool g_bRegenerate{ };
 bool g_bEquipAmmo{ };
 bool g_bEquipAmmoNade{ };
 bool g_bRealScoreFriendly{ };
@@ -112,6 +113,7 @@ int g_nDeaths[48]{ };
 int g_nKills[48]{ };
 
 int g_nTeam[48]{ };
+int g_nClass[48]{ };
 
 int g_nDeathMsg{ };
 int g_nTextMsg{ };
@@ -1738,6 +1740,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
     ::g_bZeroMoney = { };
     ::g_bFixScore = { };
     ::g_bRealScore = { };
+    ::g_bRegenerate = { };
     ::g_bEquipAmmo = { };
     ::g_bEquipAmmoNade = { };
     ::g_bRealScoreFriendly = { };
@@ -2326,6 +2329,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
             ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+            ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
             ::std::printf("'Equip Ammo' Is Now '%s'\n", ::g_bEquipAmmo ? "TRUE" : "FALSE");
             ::std::printf("'Equip Ammo Nade' Is Now '%s'\n", ::g_bEquipAmmoNade ? "TRUE" : "FALSE");
             ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
@@ -2408,6 +2412,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
         ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
         ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
         ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+        ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
         ::std::printf("'Equip Ammo' Is Now '%s'\n", ::g_bEquipAmmo ? "TRUE" : "FALSE");
         ::std::printf("'Equip Ammo Nade' Is Now '%s'\n", ::g_bEquipAmmoNade ? "TRUE" : "FALSE");
         ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
@@ -2492,6 +2497,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
             ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
             ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+            ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
             ::std::printf("'Equip Ammo' Is Now '%s'\n", ::g_bEquipAmmo ? "TRUE" : "FALSE");
             ::std::printf("'Equip Ammo Nade' Is Now '%s'\n", ::g_bEquipAmmoNade ? "TRUE" : "FALSE");
             ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
@@ -2573,6 +2579,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
                 ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+                ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
                 ::std::printf("'Equip Ammo' Is Now '%s'\n", ::g_bEquipAmmo ? "TRUE" : "FALSE");
                 ::std::printf("'Equip Ammo Nade' Is Now '%s'\n", ::g_bEquipAmmoNade ? "TRUE" : "FALSE");
                 ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
@@ -2652,6 +2659,7 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
                 ::std::printf("'Fix Score' Is Now '%s'\n", ::g_bFixScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score' Is Now '%s'\n", ::g_bRealScore ? "TRUE" : "FALSE");
                 ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+                ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
                 ::std::printf("'Equip Ammo' Is Now '%s'\n", ::g_bEquipAmmo ? "TRUE" : "FALSE");
                 ::std::printf("'Equip Ammo Nade' Is Now '%s'\n", ::g_bEquipAmmoNade ? "TRUE" : "FALSE");
                 ::std::printf("'Friendly Decrease' Is Now '%s'\n", ::g_bFriendlyDecrease ? "TRUE" : "FALSE");
@@ -2841,6 +2849,24 @@ void Hook_ServerActivate(::edict_t*, int, int) noexcept
         ::g_bRealScoreFriendly = jsTree["Real Score Friendly"].get < bool >();
         {
             ::std::printf("'Real Score Friendly' Is Now '%s'\n", ::g_bRealScoreFriendly ? "TRUE" : "FALSE");
+        }
+    }
+
+    if (jsTree["Regenerate"].empty())
+    {
+        ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
+    }
+
+    else if (!jsTree["Regenerate"].is_boolean())
+    {
+        ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
+    }
+
+    else
+    {
+        ::g_bRegenerate = jsTree["Regenerate"].get < bool >();
+        {
+            ::std::printf("'Regenerate' Is Now '%s'\n", ::g_bRegenerate ? "TRUE" : "FALSE");
         }
     }
 
@@ -4708,7 +4734,7 @@ void Hook_ServerActivate_Post(::edict_t*, int, int) noexcept
 
 void Hook_StartFrame_Post() noexcept
 {
-    static long long llTime{ }, llStamp{ };
+    static long long llTime{ }, llStamp{ }, llRegenStamp[48]{ };
     static int nEntity{ }, nIter{ }, nFov{ }, nTeam{ }, nKevlar{ };
     static bool bAltered{ };
 
@@ -6300,7 +6326,7 @@ void Hook_StartFrame_Post() noexcept
                                                         {
                                                             (*::g_engfuncs.pfnWriteShort) (pEntity->v.frags);
                                                             (*::g_engfuncs.pfnWriteShort) (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs));
-                                                            (*::g_engfuncs.pfnWriteShort) ({ });
+                                                            (*::g_engfuncs.pfnWriteShort) (::g_nClass[nEntity]);
                                                             (*::g_engfuncs.pfnWriteShort) (::g_nTeam[nEntity]);
                                                         }
                                                     }
@@ -6330,17 +6356,173 @@ void Hook_StartFrame_Post() noexcept
 
                                     if (!pEntity->v.deadflag)
                                     {
-                                        if (pEntity->v.health >= 100.f)
+                                        if (pEntity->v.health > 0.f)
                                         {
                                             if (!::g_bNoWeapons)
                                             {
                                                 if (pEntity->v.weapons)
                                                 {
+                                                    if (::g_bRegenerate)
+                                                    {
+                                                        if (pEntity->v.health < 100.f)
+                                                        {
+                                                            llTime = ::std::time(nullptr);
+                                                            {
+                                                                if ((llTime - llRegenStamp[nEntity]) > 0)
+                                                                {
+                                                                    llRegenStamp[nEntity] = llTime;
+                                                                    {
+                                                                        pEntity->v.health += ((pEntity->v.health <= 99.f) ? (1.f) : (100.f - pEntity->v.health));
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+
                                                     if (::g_bEquip[nEntity])
                                                     {
                                                         strItem = ::pickRndItem(::g_strSpawnItems);
                                                         {
-                                                            if (::giveGameItem(strItem, pEntity) && ::g_bEquipAmmo)
+                                                            if (::giveGameItem(strItem, pEntity))
+                                                            {
+                                                                if (::g_bEquipAmmo)
+                                                                {
+                                                                    if (!strItem.compare("weapon_gauss"))
+                                                                    {
+                                                                        ::giveGameItem("ammo_gaussclip", pEntity);
+                                                                        ::giveGameItem("ammo_gaussclip", pEntity);
+
+                                                                        ::giveGameItem("ammo_gaussclip", pEntity);
+                                                                        ::giveGameItem("ammo_gaussclip", pEntity);
+                                                                    }
+
+                                                                    else if (!strItem.compare("weapon_rpg"))
+                                                                    {
+                                                                        ::giveGameItem("ammo_rpgclip", pEntity);
+                                                                        ::giveGameItem("ammo_rpgclip", pEntity);
+                                                                    }
+
+                                                                    else if (!strItem.compare("weapon_357"))
+                                                                    {
+                                                                        ::giveGameItem("ammo_357", pEntity);
+                                                                        ::giveGameItem("ammo_357", pEntity);
+
+                                                                        ::giveGameItem("ammo_357", pEntity);
+                                                                        ::giveGameItem("ammo_357", pEntity);
+
+                                                                        ::giveGameItem("ammo_357", pEntity);
+                                                                        ::giveGameItem("ammo_357", pEntity);
+                                                                    }
+
+                                                                    else if (!strItem.compare("weapon_egon"))
+                                                                    {
+                                                                        ::giveGameItem("weapon_egon", pEntity);
+                                                                        ::giveGameItem("weapon_egon", pEntity);
+
+                                                                        ::giveGameItem("weapon_egon", pEntity);
+                                                                        ::giveGameItem("weapon_egon", pEntity);
+                                                                    }
+
+                                                                    else if (!strItem.compare("weapon_crossbow"))
+                                                                    {
+                                                                        ::giveGameItem("ammo_crossbow", pEntity);
+                                                                        ::giveGameItem("ammo_crossbow", pEntity);
+
+                                                                        ::giveGameItem("ammo_crossbow", pEntity);
+                                                                        ::giveGameItem("ammo_crossbow", pEntity);
+
+                                                                        ::giveGameItem("ammo_crossbow", pEntity);
+                                                                        ::giveGameItem("ammo_crossbow", pEntity);
+
+                                                                        ::giveGameItem("ammo_crossbow", pEntity);
+                                                                        ::giveGameItem("ammo_crossbow", pEntity);
+
+                                                                        ::giveGameItem("ammo_crossbow", pEntity);
+                                                                        ::giveGameItem("ammo_crossbow", pEntity);
+                                                                    }
+
+                                                                    else if (!strItem.compare("weapon_shotgun"))
+                                                                    {
+                                                                        ::giveGameItem("ammo_buckshot", pEntity);
+                                                                        ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                        ::giveGameItem("ammo_buckshot", pEntity);
+                                                                        ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                        ::giveGameItem("ammo_buckshot", pEntity);
+                                                                        ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                        ::giveGameItem("ammo_buckshot", pEntity);
+                                                                        ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                        ::giveGameItem("ammo_buckshot", pEntity);
+                                                                        ::giveGameItem("ammo_buckshot", pEntity);
+
+                                                                        ::giveGameItem("ammo_buckshot", pEntity);
+                                                                        ::giveGameItem("ammo_buckshot", pEntity);
+                                                                    }
+
+                                                                    else if (0 == ((::strLwr(strItem)).compare("weapon_9mmar")))
+                                                                    {
+                                                                        ::giveGameItem("ammo_9mmAR", pEntity);
+                                                                        ::giveGameItem("ammo_9mmAR", pEntity);
+
+                                                                        ::giveGameItem("ammo_9mmAR", pEntity);
+                                                                        ::giveGameItem("ammo_9mmAR", pEntity);
+
+                                                                        ::giveGameItem("ammo_9mmAR", pEntity);
+                                                                        ::giveGameItem("ammo_9mmAR", pEntity);
+
+                                                                        ::giveGameItem("ammo_9mmAR", pEntity);
+                                                                        ::giveGameItem("ammo_9mmAR", pEntity);
+
+                                                                        if (::g_bEquipAmmoNade)
+                                                                        {
+                                                                            ::giveGameItem("ammo_ARgrenades", pEntity);
+                                                                            ::giveGameItem("ammo_ARgrenades", pEntity);
+
+                                                                            ::giveGameItem("ammo_ARgrenades", pEntity);
+                                                                            ::giveGameItem("ammo_ARgrenades", pEntity);
+
+                                                                            ::giveGameItem("ammo_ARgrenades", pEntity);
+                                                                            ::giveGameItem("ammo_ARgrenades", pEntity);
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+
+                                                        ::g_bEquip[nEntity] = { };
+                                                    }
+                                                }
+                                            }
+
+                                            else
+                                            {
+                                                if (::g_bRegenerate)
+                                                {
+                                                    if (pEntity->v.health < 100.f)
+                                                    {
+                                                        llTime = ::std::time(nullptr);
+                                                        {
+                                                            if ((llTime - llRegenStamp[nEntity]) > 0)
+                                                            {
+                                                                llRegenStamp[nEntity] = llTime;
+                                                                {
+                                                                    pEntity->v.health += ((pEntity->v.health <= 99.f) ? (1.f) : (100.f - pEntity->v.health));
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
+                                                if (::g_bEquip[nEntity])
+                                                {
+                                                    strItem = ::pickRndItem(::g_strSpawnItems);
+                                                    {
+                                                        if (::giveGameItem(strItem, pEntity))
+                                                        {
+                                                            if (::g_bEquipAmmo)
                                                             {
                                                                 if (!strItem.compare("weapon_gauss"))
                                                                 {
@@ -6417,8 +6599,7 @@ void Hook_StartFrame_Post() noexcept
                                                                     ::giveGameItem("ammo_buckshot", pEntity);
                                                                 }
 
-                                                                else if (!strItem.compare("weapon_9mmAR") || !strItem.compare("weapon_9mmAr") ||
-                                                                    !strItem.compare("weapon_9mmaR") || !strItem.compare("weapon_9mmar"))
+                                                                else if (0 == ((::strLwr(strItem)).compare("weapon_9mmar")))
                                                                 {
                                                                     ::giveGameItem("ammo_9mmAR", pEntity);
                                                                     ::giveGameItem("ammo_9mmAR", pEntity);
@@ -6446,10 +6627,19 @@ void Hook_StartFrame_Post() noexcept
                                                                 }
                                                             }
                                                         }
-
-                                                        ::g_bEquip[nEntity] = { };
                                                     }
 
+                                                    ::g_bEquip[nEntity] = { };
+                                                }
+                                            }
+                                        }
+
+                                        if (pEntity->v.health >= 100.f)
+                                        {
+                                            if (!::g_bNoWeapons)
+                                            {
+                                                if (pEntity->v.weapons)
+                                                {
                                                     if (::g_bHideRadar)
                                                     {
                                                         if (!::g_bRadar[nEntity])
@@ -6670,120 +6860,6 @@ void Hook_StartFrame_Post() noexcept
 
                                             else
                                             {
-                                                if (::g_bEquip[nEntity])
-                                                {
-                                                    strItem = ::pickRndItem(::g_strSpawnItems);
-                                                    {
-                                                        if (::giveGameItem(strItem, pEntity) && ::g_bEquipAmmo)
-                                                        {
-                                                            if (!strItem.compare("weapon_gauss"))
-                                                            {
-                                                                ::giveGameItem("ammo_gaussclip", pEntity);
-                                                                ::giveGameItem("ammo_gaussclip", pEntity);
-
-                                                                ::giveGameItem("ammo_gaussclip", pEntity);
-                                                                ::giveGameItem("ammo_gaussclip", pEntity);
-                                                            }
-
-                                                            else if (!strItem.compare("weapon_rpg"))
-                                                            {
-                                                                ::giveGameItem("ammo_rpgclip", pEntity);
-                                                                ::giveGameItem("ammo_rpgclip", pEntity);
-                                                            }
-
-                                                            else if (!strItem.compare("weapon_357"))
-                                                            {
-                                                                ::giveGameItem("ammo_357", pEntity);
-                                                                ::giveGameItem("ammo_357", pEntity);
-
-                                                                ::giveGameItem("ammo_357", pEntity);
-                                                                ::giveGameItem("ammo_357", pEntity);
-
-                                                                ::giveGameItem("ammo_357", pEntity);
-                                                                ::giveGameItem("ammo_357", pEntity);
-                                                            }
-
-                                                            else if (!strItem.compare("weapon_egon"))
-                                                            {
-                                                                ::giveGameItem("weapon_egon", pEntity);
-                                                                ::giveGameItem("weapon_egon", pEntity);
-
-                                                                ::giveGameItem("weapon_egon", pEntity);
-                                                                ::giveGameItem("weapon_egon", pEntity);
-                                                            }
-
-                                                            else if (!strItem.compare("weapon_crossbow"))
-                                                            {
-                                                                ::giveGameItem("ammo_crossbow", pEntity);
-                                                                ::giveGameItem("ammo_crossbow", pEntity);
-
-                                                                ::giveGameItem("ammo_crossbow", pEntity);
-                                                                ::giveGameItem("ammo_crossbow", pEntity);
-
-                                                                ::giveGameItem("ammo_crossbow", pEntity);
-                                                                ::giveGameItem("ammo_crossbow", pEntity);
-
-                                                                ::giveGameItem("ammo_crossbow", pEntity);
-                                                                ::giveGameItem("ammo_crossbow", pEntity);
-
-                                                                ::giveGameItem("ammo_crossbow", pEntity);
-                                                                ::giveGameItem("ammo_crossbow", pEntity);
-                                                            }
-
-                                                            else if (!strItem.compare("weapon_shotgun"))
-                                                            {
-                                                                ::giveGameItem("ammo_buckshot", pEntity);
-                                                                ::giveGameItem("ammo_buckshot", pEntity);
-
-                                                                ::giveGameItem("ammo_buckshot", pEntity);
-                                                                ::giveGameItem("ammo_buckshot", pEntity);
-
-                                                                ::giveGameItem("ammo_buckshot", pEntity);
-                                                                ::giveGameItem("ammo_buckshot", pEntity);
-
-                                                                ::giveGameItem("ammo_buckshot", pEntity);
-                                                                ::giveGameItem("ammo_buckshot", pEntity);
-
-                                                                ::giveGameItem("ammo_buckshot", pEntity);
-                                                                ::giveGameItem("ammo_buckshot", pEntity);
-
-                                                                ::giveGameItem("ammo_buckshot", pEntity);
-                                                                ::giveGameItem("ammo_buckshot", pEntity);
-                                                            }
-
-                                                            else if (!strItem.compare("weapon_9mmAR") || !strItem.compare("weapon_9mmAr") ||
-                                                                !strItem.compare("weapon_9mmaR") || !strItem.compare("weapon_9mmar"))
-                                                            {
-                                                                ::giveGameItem("ammo_9mmAR", pEntity);
-                                                                ::giveGameItem("ammo_9mmAR", pEntity);
-
-                                                                ::giveGameItem("ammo_9mmAR", pEntity);
-                                                                ::giveGameItem("ammo_9mmAR", pEntity);
-
-                                                                ::giveGameItem("ammo_9mmAR", pEntity);
-                                                                ::giveGameItem("ammo_9mmAR", pEntity);
-
-                                                                ::giveGameItem("ammo_9mmAR", pEntity);
-                                                                ::giveGameItem("ammo_9mmAR", pEntity);
-
-                                                                if (::g_bEquipAmmoNade)
-                                                                {
-                                                                    ::giveGameItem("ammo_ARgrenades", pEntity);
-                                                                    ::giveGameItem("ammo_ARgrenades", pEntity);
-
-                                                                    ::giveGameItem("ammo_ARgrenades", pEntity);
-                                                                    ::giveGameItem("ammo_ARgrenades", pEntity);
-
-                                                                    ::giveGameItem("ammo_ARgrenades", pEntity);
-                                                                    ::giveGameItem("ammo_ARgrenades", pEntity);
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-
-                                                    ::g_bEquip[nEntity] = { };
-                                                }
-
                                                 if (::g_bHideRadar)
                                                 {
                                                     if (!::g_bRadar[nEntity])
@@ -8394,9 +8470,16 @@ void Hook_WriteShort_Post(int nShort) noexcept
     {
         if (::g_bScoreInfo)
         {
-            if (++::g_nScoreInfoShort == 4)
+            ++::g_nScoreInfoShort;
+
+            if (::g_nScoreInfoShort == 4)
             {
                 ::g_nTeam[::g_nScoreInfoId] = nShort;
+            }
+
+            else if (::g_nScoreInfoShort == 3)
+            {
+                ::g_nClass[::g_nScoreInfoId] = nShort;
             }
         }
     }
@@ -10019,7 +10102,7 @@ void Hook_MessageEnd_Post() noexcept
                                                                         {
                                                                             (*::g_engfuncs.pfnWriteShort) (pEntity->v.frags);
                                                                             (*::g_engfuncs.pfnWriteShort) (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs));
-                                                                            (*::g_engfuncs.pfnWriteShort) ({ });
+                                                                            (*::g_engfuncs.pfnWriteShort) (::g_nClass[::g_nResetHudId]);
                                                                             (*::g_engfuncs.pfnWriteShort) (::g_nTeam[::g_nResetHudId]);
                                                                         }
                                                                     }
@@ -11718,7 +11801,7 @@ void Hook_MessageEnd_Post() noexcept
                                                                             {
                                                                                 (*::g_engfuncs.pfnWriteShort) (pEntity->v.frags);
                                                                                 (*::g_engfuncs.pfnWriteShort) (*((int*)pEntity->pvPrivateData + ::m_iHlDeaths + ::g_nOsOffs));
-                                                                                (*::g_engfuncs.pfnWriteShort) ({ });
+                                                                                (*::g_engfuncs.pfnWriteShort) (::g_nClass[::g_nResetHudId]);
                                                                                 (*::g_engfuncs.pfnWriteShort) (::g_nTeam[::g_nResetHudId]);
                                                                             }
                                                                         }

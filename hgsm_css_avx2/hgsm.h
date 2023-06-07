@@ -406,6 +406,7 @@ extern bool g_bHooked;
 extern bool g_bEvHooked;
 extern bool g_bNoReturn;
 
+extern bool g_bRegenerate;
 extern bool g_bRealScore;
 extern bool g_bHideRadar;
 extern bool g_bRealScoreFriendly;
@@ -429,6 +430,7 @@ extern int g_nTicks;
 
 extern float g_fIntervalPerTick;
 
+extern int m_iHealth, m_iHealthSize;
 extern int m_iDeaths, m_iDeathsSize;
 extern int m_iFrags, m_iFragsSize;
 

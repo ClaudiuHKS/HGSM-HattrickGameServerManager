@@ -122,6 +122,7 @@ extern bool g_bHideMoney;
 extern bool g_bHideTimer;
 extern bool g_bHideFlash;
 
+extern bool g_bRegenerate;
 extern bool g_bEquipAmmo;
 extern bool g_bEquipAmmoNade;
 extern bool g_bRealScoreFriendly;
@@ -143,6 +144,7 @@ extern int g_nDeaths[48];
 extern int g_nKills[48];
 
 extern int g_nTeam[48];
+extern int g_nClass[48];
 
 extern int g_nDeathMsg;
 extern int g_nScoreShort;
